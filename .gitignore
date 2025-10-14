@@ -1,0 +1,17 @@
+/tmp
+__pycache__
+***.pyc
+*.so
+*.dylib
+*.out
+*.o
+*.a
+*.log
+*.tmp
+*.swp
+
+.vscode/*
+.idea/*
+.DS_Store
+timeloop-model*.yaml
+test/*

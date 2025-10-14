@@ -167,9 +167,8 @@ class ProgramTransformer(nn.Module):
 
 class Tuner:
 
-    def __init__(self, operator_instance, accelerator, report_dir, optim_obj):
-        super().__init__()
-
+    def __init__(self, operator_instance, accelerator, report_dir, optim_obj, verbose=1):
+        self.verbose = verbose
         self.opt_obj = [optim_obj, 'latency', 'energy']
 
         self.timeloop_out_config_path = f'./tmp/out_config_{datetime.now().strftime("%H:%M:%S")}'
@@ -177,7 +176,7 @@ class Tuner:
 
         self.accelerator = accelerator
         self.cost_model = Timeloop(in_config_path='./SpatialAccelerators', out_config_path=self.timeloop_out_config_path,
-                                   accelerator=accelerator, opt_obj=self.opt_obj)
+                                   accelerator=accelerator, opt_obj=self.opt_obj, verbose=verbose)
         self.dim2note = self.cost_model.dim2note
         self.len_dimension = len(self.dim2note.values())
 
@@ -214,12 +213,12 @@ class Tuner:
         self.num_samples = 32
         self.max_tile = 30
 
-        self.initial_order_mask = np.zeros((self.num_samples, self.len_dimension + 1), dtype=np.float)
+        self.initial_order_mask = np.zeros((self.num_samples, self.len_dimension + 1), dtype=np.float32)
         self.initial_order_mask[:, -1] = float('-inf')
 
         self.tile_budgets = np.zeros((self.num_samples, self.len_dimension, self.num_primes), dtype=np.int32)
         self.initial_tile_masks = np.zeros(
-            (self.num_samples, self.len_dimension, self.num_primes, (self.max_tile + 1) * 2), dtype=np.float)
+            (self.num_samples, self.len_dimension, self.num_primes, (self.max_tile + 1) * 2), dtype=np.float32)
 
         # print("buffers_with_spmap", self.buffers_with_spmap)
         for i, key in enumerate(self.dim2note.values()):

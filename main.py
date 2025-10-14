@@ -10,24 +10,38 @@ from program_tuner import Tuner
 
 
 def main():
-    opt = parser.parse_args()
     benchmark_dir = 'Benchmarks'
     accelerator_dir = 'SpatialAccelerators'
-    accelerator = opt.accelerator
-    workload = opt.workload
-    layer_id = opt.layer_id
-    batch_size = opt.batch_size
+    accelerator = args.accelerator
+    workload = args.workload
+    layer_id = args.layer_id
+    batch_size = args.batch_size
 
-    with open(os.path.join(benchmark_dir, '{}_workload/layers.yaml'.format(workload)), 'r') as fd:
+    layer_file = os.path.join(benchmark_dir, '{}_workload/layers.yaml'.format(workload))
+    with open(layer_file, 'r') as fd:
+        if args.verbose >= 2:
+            print('Loading layer file: {}'.format(layer_file))
         layers = yaml.load(fd, Loader=yaml.SafeLoader)
-    fd.close()
 
     layer = layers[layer_id]
-    print(accelerator, workload, batch_size, layer_id, layer)
-    report_dir = os.path.join(opt.report_dir,  'arch_{}'.format(accelerator), 'obj_{}'.format(opt.optim_obj),
+    
+    if args.verbose >= 1:
+        print('Tuning for:')
+        print('\t', accelerator, workload, batch_size, layer_id, layer)
+    
+    report_dir = os.path.join(args.report_dir,  'arch_{}'.format(accelerator), 'obj_{}'.format(args.optim_obj),
                               '{}_input{}'.format(workload, batch_size), 'layer-{}'.format(layer_id))
-    with open(os.path.join(benchmark_dir, '{}_workload/{}.yaml'.format(workload, layer)), 'r') as fd:
+    if args.verbose > 0:
+        print('Report dir: {}'.format(report_dir))
+    
+    layer_problem_file = os.path.join(benchmark_dir, '{}_workload/{}.yaml'.format(workload, layer))
+    with open(layer_problem_file, 'r') as fd:
+        if args.verbose >= 2:
+            print('Loading layer problem file and extend it: {}'.format(layer_problem_file))
         layer_problem = yaml.load(fd, Loader=yaml.SafeLoader)
+        if args.verbose >= 2:
+            print('\t', layer_problem)
+        # FIXME:避免problem文件的硬编码，另外，此处定义的格式已经outdated
         problem = {'problem': {
             'shape': {'name': 'CNN-Layer', 'dimensions': ['H', 'C', 'K', 'R', 'S', 'N', 'P', 'Q'],
                       'coefficients': [{'name': 'Wstride', 'default': 1},
@@ -82,28 +96,43 @@ def main():
         problem['problem']['instance']['Hstride'] = layer_problem['problem']['Hstride']
         problem['problem']['instance']['Wdilation'] = layer_problem['problem']['Wdilation']
         problem['problem']['instance']['Hdilation'] = layer_problem['problem']['Hdilation']
-    fd.close()
-    with open(os.path.join(accelerator_dir, accelerator, 'problem.yaml'), 'w') as fd:
+    
+    
+    problem_file = os.path.join(accelerator_dir, accelerator, 'problem.yaml')
+    with open(problem_file, 'w') as fd:
+        if args.verbose >= 2:
+            print('Dumping extended problem file: {}'.format(problem_file))
         yaml.dump(problem, fd)
-    fd.close()
-
-    tuner = Tuner(problem['problem']['instance'], accelerator, report_dir, opt.optim_obj)
-    chkpt = tuner.run(opt.epochs)
+        
+    tuner = Tuner(problem['problem']['instance'], accelerator, report_dir, args.optim_obj, verbose=args.verbose)
+    chkpt = tuner.run(args.epochs)
     os.makedirs(report_dir, exist_ok=True)
     with open(os.path.join(report_dir, 'env_chkpt.plt'), 'wb') as fd:
         pickle.dump(chkpt, fd)
-    fd.close()
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--optim_obj', type=str, default="latency", help='optimization objective')
     parser.add_argument('--epochs', type=int, default=10, help='number of generations/epochs')
+    parser.add_argument('--verbose', type=int, default=2, help='logging level')
     parser.add_argument('--report_dir', type=str, default='./report', help='The report directory')
 
     parser.add_argument('--accelerator', type=str, default='arch', help='accelerator accelerator')
     parser.add_argument('--workload', type=str, default=None)
     parser.add_argument('--layer_id', type=int, default=None)
     parser.add_argument('--batch_size', type=int, default=1)
+    args = parser.parse_args()
 
+    ##############################
+    # CUDA_VISIBLE_DEVICES=0 python main.py --optim_obj latency --epochs 10 --accelerator Simba --workload resnet50 --layer_id 43 --batch_size 16
+    args.optim_obj = 'latency'
+    args.epochs = 10
+    args.accelerator = 'Simba'
+    args.workload = 'resnet50'
+    args.layer_id = 43
+    args.batch_size = 16
+    
+    ##############################
+    
     main()
