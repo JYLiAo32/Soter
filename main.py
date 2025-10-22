@@ -41,6 +41,8 @@ def main():
         layer_problem = yaml.load(fd, Loader=yaml.SafeLoader)
         if args.verbose >= 2:
             print('\t', layer_problem)
+        # TODO: 是否可以在(yaml)文件上定义, 结合exercise教程仓库里的`workspace/tutorial_exercises/02_interface_and_design_space_exploration_2024/1_specifications.ipynb`相关用法
+        #       结合timeloopFE
         # FIXME:避免problem文件的硬编码，另外，此处定义的格式已经outdated
         problem = {'problem': {
             'shape': {'name': 'CNN-Layer', 'dimensions': ['H', 'C', 'K', 'R', 'S', 'N', 'P', 'Q'],

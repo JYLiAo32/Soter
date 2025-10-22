@@ -14,7 +14,6 @@ import logging
 import pathlib
 import re
 from concurrent.futures import ProcessPoolExecutor
-from utils.color_print import colored_print
 
 
 class Timeloop(object):
@@ -24,7 +23,7 @@ class Timeloop(object):
     """
     
     def __init__(self, in_config_path='./SpatialAccelerators', out_config_path='./out_config', accelerator='Simba',
-                 opt_obj=None, use_sparse=False, verbose=1):
+                 opt_obj=None, use_sparse=False):
         """
         初始化Timeloop成本模型
         
@@ -34,9 +33,8 @@ class Timeloop(object):
             accelerator: 加速器类型，如'Simba'、'Eyeriss'、'TensorCore'等
             opt_obj: 优化目标列表，如['edp', 'latency', 'energy']
             use_sparse: 是否使用稀疏计算优化
-            verbose: 日志 verbosity 级别
         """
-        self.verbose = verbose
+        
         self.accelerator = accelerator
         self.out_config_path = out_config_path
         self.use_sparse = use_sparse
@@ -44,14 +42,17 @@ class Timeloop(object):
         # 加载架构配置文件 - 定义硬件加速器结构
         with open(os.path.join(in_config_path, accelerator, 'arch.yaml'), 'r') as fd:
             self.arch = yaml.load(fd, Loader=yaml.SafeLoader)
+        fd.close()
         
         # 加载问题配置文件 - 定义神经网络层参数
         with open(os.path.join(in_config_path, accelerator, 'problem.yaml'), 'r') as fd:
             self.problem = yaml.load(fd,Loader=yaml.SafeLoader)
+        fd.close()
         
         # 加载映射空间配置文件 - 定义合法的映射策略空间
         with open(os.path.join(in_config_path, accelerator, 'mapspace.yaml'), 'r') as fd:
             self.mapspace = yaml.load(fd, Loader=yaml.SafeLoader)
+        fd.close()
 
         self.opt_obj = opt_obj
 
@@ -59,6 +60,7 @@ class Timeloop(object):
         if self.use_sparse:
             with open(os.path.join(in_config_path, accelerator, 'sparse.yaml'), 'r') as fd:
                 self.sparse = yaml.load(fd,Loader=yaml.SafeLoader)
+            fd.close()
 
         # 解析架构信息：缓冲区名称、大小、空间映射约束等
         buffer_name_list, buffer_size_list, buffer_spmap_cstr, num_buffer_levels, num_pes = self.get_arch_info()
@@ -82,8 +84,7 @@ class Timeloop(object):
         # 维度映射：将数字索引映射到问题维度名称
         # R=S=卷积核尺寸, P=Q=输出特征图尺寸, C=输入通道, K=输出通道, H=输入高度, N=批大小
         self.dim2note = {0: 'R', 1: 'S', 2: 'P', 3: 'Q', 4: 'C', 5: 'K', 6: 'H', 7: 'N'}
-        if self.verbose >= 2:
-            colored_print(self.dim2note.values(), 'info')
+        print(self.dim2note.values())
         
         # 获取问题维度信息和质因数分解
         self.dimension, self.dimension_dict = self.get_problem_info()
@@ -622,31 +623,22 @@ class Timeloop(object):
         arch = self.arch
         problem = self.get_problem_configs(dimension)
         map = self.get_map_config(program)
-        if self.verbose >= 1:
-            print('arch config:\n', arch)
-            print('Problem config:\n', problem)
-            print('map config:\n', map)
         return arch, problem, map
 
     def write_config(self, arch, problem, map, arch_path, problem_path, map_path, sparse_path=None):
-        if self.verbose >= 2:
-            print('----------------------------------')
-            colored_print("Output_path:", 'info')
-            colored_print(arch_path, 'info')
-            colored_print(problem_path, 'info')
-            colored_print(map_path, 'info')
-            if self.use_sparse:
-                colored_print(sparse_path, 'info')
-            print('----------------------------------')
         with open(arch_path, 'w') as fd:
             yaml.dump(arch, fd)
+        fd.close()
         with open(problem_path, 'w') as fd:
             yaml.dump(problem, fd)
+        fd.close()
         with open(map_path, 'w') as fd:
             yaml.dump(map, fd)
+        fd.close()
         if self.use_sparse:
             with open(sparse_path, 'w') as fd:
                 yaml.dump(self.sparse, fd)
+            fd.close()
 
     def thread_fun(self, args):
         program, pool_idx = args
@@ -674,7 +666,7 @@ class Timeloop(object):
     def run(self, programs):
         num_samples = programs.shape[0]
         # pool = ProcessPoolExecutor(num_samples)
-        pool = None  # TODO: 正确性验证后，改回并行模式
+        pool = None
         self.create_pool_env(num_pools=num_samples)
 
         fitness = np.ones((num_samples, len(self.opt_obj))) * -np.inf
