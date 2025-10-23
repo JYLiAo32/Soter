@@ -1,0 +1,73 @@
+mapping:
+  - target: Registers
+    type: temporal
+    factors: [C=1, K=1, N=1, P=7, Q=7, R=1, S=1]  
+    permutation: [K,R,S,C,P,Q,N]
+  - target: Registers
+    type: dataspace
+    keep:
+      - Weights
+    bypass:
+      - Inputs
+      - Outputs
+  - target: AccumulationBuffer
+    type: temporal
+    # factors: [C=2, K=4, N=1, P=1, Q=1, R=1, S=1]
+    factors: [C=8, K=8, N=1, P=2, Q=2, R=1, S=1]
+    permutation: [S,N,P,K,Q,R,C]
+  # - target: AccumulationBuffer
+  #   type: spatial
+  #   factors: [C=2, K=2, N=1, P=2, Q=2, R=1, S=1]
+  #   permutation: [S,N,P,K,Q,R,C]
+  - target: AccumulationBuffer
+    type: dataspace
+    keep:
+      - Outputs
+    bypass:
+      - Weights
+      - Inputs
+  - target: WeightBuffer
+    type: temporal
+    factors: [C=4, K=2, N=2, P=1, Q=1, R=1, S=1]
+    permutation: [P,Q,N,R,S,C,K]
+  - target: WeightBuffer
+    type: dataspace
+    keep:
+      - Weights
+    bypass:
+      - Inputs
+      - Outputs
+  - target: InputBuffer
+    type: temporal
+    factors: [C=1, K=8, N=1, P=1, Q=1, R=1, S=1]  # FIXME: 需要修改arch中的input_buffer的depth, 否则容量不足
+    permutation: [P,C,N,Q,K,S,R]
+  - target: InputBuffer
+    type: dataspace
+    keep:
+      - Inputs
+    bypass:
+      - Weights
+      - Outputs
+  - target: GlobalBuffer
+    type: temporal
+    factors: [C=1, K=1, N=1, P=1, Q=1, R=1, S=1]
+    permutation: [C,R,Q,P,N,S,K]
+  - target: GlobalBuffer
+    type: dataspace
+    keep:
+      - Inputs
+      - Outputs
+    bypass:
+      - Weights
+  - target: DRAM
+    type: temporal
+    factors: [C=32, K=4, N=8, P=1, Q=1, R=1, S=1]
+    permutation: [P,N,Q,K,S,C,R]
+  - target: DRAM
+    type: dataspace
+    keep:
+      - Weights
+      - Inputs
+      - Outputs
+    bypass:
+      []

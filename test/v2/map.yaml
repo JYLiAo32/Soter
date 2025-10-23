@@ -1,0 +1,87 @@
+mapping:
+- factors: R=1 S=1 P=7 Q=7 C=1 K=1 H=1 N=1
+  permutation: KRPSCQNH
+  target: Registers
+  type: temporal
+
+- bypass:
+  - Inputs
+  - Outputs
+  keep:
+  - Weights
+  target: Registers
+  type: datatype  # FIXME: 新版的bypass属性下，该值都要是dataspace
+
+- factors: R=1 S=1 P=1 Q=1 C=2 K=4 H=1 N=1
+  permutation: SHNPKQRC
+  target: AccumulationBuffer
+  type: temporal
+
+- factors: R=1 S=1 P=2 Q=2 C=2 K=2 H=1 N=1
+  permutation: SHNPKQRC
+  target: AccumulationBuffer
+  type: spatial
+
+- bypass:
+  - Weights
+  - Inputs
+  keep:
+  - Outputs
+  target: AccumulationBuffer
+  type: datatype
+
+- factors: R=1 S=1 P=1 Q=1 C=4 K=2 H=1 N=2
+  permutation: PQNRSHCK
+  target: WeightBuffer
+  type: temporal
+
+- bypass:
+  - Inputs
+  - Outputs
+  keep:
+  - Weights
+  target: WeightBuffer
+  type: datatype
+
+- factors: R=1 S=1 P=1 Q=1 C=1 K=8 H=1 N=1
+  permutation: HPCNQKSR
+  target: InputBuffer
+  type: temporal
+
+- bypass:
+  - Weights
+  - Outputs
+  keep:
+  - Inputs
+  target: InputBuffer
+  type: datatype
+
+- factors: R=1 S=1 P=1 Q=1 C=1 K=1 H=1 N=1
+  permutation: CRHQPNSK
+  target: GlobalBuffer
+  type: temporal
+
+- factors: R=1 S=1 P=1 Q=1 C=2 K=1 H=1 N=1
+  permutation: CRHQPNSK
+  target: GlobalBuffer
+  type: spatial
+
+- bypass:
+  - Weights
+  keep:
+  - Inputs
+  - Outputs
+  target: GlobalBuffer
+  type: datatype
+
+- factors: R=1 S=1 P=1 Q=1 C=32 K=4 H=1 N=8
+  permutation: PNQKHSCR
+  target: DRAM
+  type: temporal
+  
+- keep:
+  - Inputs
+  - Outputs
+  - Weights
+  target: DRAM
+  type: datatype

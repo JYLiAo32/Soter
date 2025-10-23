@@ -1,0 +1,92 @@
+mapping:
+  - target: PEWeightRegs
+    type: temporal
+    # factors: [C=1, K=1, H=1, N=1, P=7, Q=7, R=1, S=1]
+    # permutation: [K,R,S,C,P,Q,N,H]
+    factors: [C=1, K=1, N=1, P=7, Q=7, R=1, S=1]  # NOTE: 对齐arch/problem, 删除H维
+    permutation: [K,R,S,C,P,Q,N]
+  - target: PEWeightRegs
+    type: dataspace
+    keep:
+      - Weights
+    bypass:
+      - Inputs
+      - Outputs
+  - target: PEAccuBuffer
+    type: temporal
+    # factors: [C=2, K=4, H=1, N=1, P=1, Q=1, R=1, S=1]
+    # permutation: [S,H,N,P,K,Q,R,C]
+    factors: [C=2, K=4, N=1, P=1, Q=1, R=1, S=1]
+    permutation: [S,N,P,K,Q,R,C]
+  - target: PEAccuBuffer
+    type: spatial
+    # factors: [C=2, K=2, H=1, N=1, P=2, Q=2, R=1, S=1]
+    # permutation: [S,H,N,P,K,Q,R,C]
+    factors: [C=2, K=2, N=1, P=2, Q=2, R=1, S=1]
+    permutation: [S,N,P,K,Q,R,C]
+  - target: PEAccuBuffer
+    type: dataspace
+    keep:
+      - Outputs
+    bypass:
+      - Weights
+      - Inputs
+  - target: PEWeightBuffer
+    type: temporal
+    # factors: [C=4, K=2, H=1, N=2, P=1, Q=1, R=1, S=1]
+    # permutation: [P,Q,N,R,S,H,C,K]
+    factors: [C=4, K=2, N=2, P=1, Q=1, R=1, S=1]
+    permutation: [P,Q,N,R,S,C,K]
+  - target: PEWeightBuffer
+    type: dataspace
+    keep:
+      - Weights
+    bypass:
+      - Inputs
+      - Outputs
+  - target: InputBuffer
+    type: temporal
+    # factors: [C=1, K=8, H=1, N=1, P=1, Q=1, R=1, S=1]
+    # permutation: [H,P,C,N,Q,K,S,R]
+    factors: [C=1, K=8, N=1, P=1, Q=1, R=1, S=1]
+    permutation: [P,C,N,Q,K,S,R]
+  - target: InputBuffer
+    type: dataspace
+    keep:
+      - Inputs
+    bypass:
+      - Weights
+      - Outputs
+  - target: GlobalBuffer
+    type: temporal
+    # factors: [C=1, K=1, H=1, N=1, P=1, Q=1, R=1, S=1]
+    # permutation: [C,R,H,Q,P,N,S,K]
+    factors: [C=1, K=1, N=1, P=1, Q=1, R=1, S=1]
+    permutation: [C,R,Q,P,N,S,K]
+  # - target: GlobalBuffer  # NOTE: 架构中不存在并行的子模块，不能做spatial
+  #   type: spatial
+  #   # factors: [C=2, K=1, H=1, N=1, P=1, Q=1, R=1, S=1]
+  #   # permutation: [C,R,H,Q,P,N,S,K]
+  #   factors: [C=2, K=1, N=1, P=1, Q=1, R=1, S=1]
+  #   permutation: [C,R,Q,P,N,S,K]
+  - target: GlobalBuffer
+    type: dataspace
+    keep:
+      - Inputs
+      - Outputs
+    bypass:
+      - Weights
+  - target: DRAM
+    type: temporal
+    # factors: [C=32, K=4, H=1, N=8, P=1, Q=1, R=1, S=1]
+    # permutation: [P,N,Q,K,H,S,C,R]
+    factors: [C=32, K=4, N=8, P=1, Q=1, R=1, S=1]
+    permutation: [P,N,Q,K,S,C,R]
+  - target: DRAM
+    type: dataspace
+    keep:
+      - Weights
+      - Inputs
+      - Outputs
+    bypass:
+      []

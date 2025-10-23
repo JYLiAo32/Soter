@@ -1,0 +1,94 @@
+architecture:
+  subtree:
+  - name: System 
+    # 对应第一个subtree的名称，其包含DRAM和一个名为Chip的subtree?
+     # 合理怀疑，同一级下的属性按照首字母顺序排序，所以name放在了这里
+     # 而在exercise仓库(0.2)里，为了突出逻辑关系，就把name放在开头
+     # 本文件调整顺序
+
+    local:  # local代码一个叶子节点？
+    - name: DRAM
+      class: DRAM
+      attributes:
+        block-size: 64
+        cluster_size: 1
+        read_bandwidth: 1
+        word-bits: 8
+        write_bandwidth: 1
+      
+    subtree:  # subtree对应一个子分支
+    - name: Chip
+      attributes:
+        technology: 40nm  # 修饰System还是Chip?
+      local:
+      - name: GlobalBuffer
+        class: SRAM
+        attributes:
+          block-size: 8
+          cluster_size: 1
+          depth: 8192
+          num-banks: 256
+          num-ports: 2
+          read_bandwidth: 2
+          width: 64
+          word-bits: 8
+          write_bandwidth: 2
+        
+      subtree:
+      - name: PE[0..15]
+        local:
+        - name: InputBuffer
+          class: regfile
+          attributes:
+            block-size: 4
+            cluster_size: 1
+            depth: 2048
+            num-banks: 1
+            num-ports: 2
+            read_bandwidth: 2
+            width: 32
+            word-bits: 8
+            write_bandwidth: 2          
+        - name: WeightBuffer
+          class: regfile
+          attributes:
+            block-size: 4
+            cluster_size: 1
+            depth: 8192
+            num-banks: 8
+            num-ports: 1
+            read_bandwidth: 2
+            width: 32
+            word-bits: 8
+            write_bandwidth: 2
+        - name: AccumulationBuffer
+          class: regfile
+          attributes:
+            block-size: 4
+            cluster_size: 1
+            depth: 768
+            network-word-bits: 16
+            num-banks: 2
+            num-ports: 2
+            read_bandwidth: 2
+            width: 96
+            word-bits: 24
+            write_bandwidth: 2
+        - name: Registers[0..63]
+          class: regfile
+          attributes:
+            block-size: 1
+            cluster_size: 1
+            depth: 1
+            num-banks: 8
+            num-ports: 2
+            read_bandwidth: 2
+            width: 8
+            word-bits: 8
+            write_bandwidth: 2
+        - name: MACC[0..63]
+          class: intmac
+          attributes:
+            cluster_size: 1
+            word-bits: 8
+  version: 0.2

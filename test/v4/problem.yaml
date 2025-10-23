@@ -1,0 +1,70 @@
+problem:
+  version: 0.4
+  instance:
+    C: 1024  # 输入通道数
+    H: 1  # 输入特征图的高度维度大小
+    Hdilation: 1 # 空洞卷积高度
+    Hstride: 1  # 垂直方向移动步长
+    K: 512  # 输出通道数
+    N: 16 # 批量处理
+    P: 14  # 输出特征图的宽度维度大小
+    Q: 14  # 输出特征图的高度维度大小
+    R: 1  # 卷积核的宽度维度大小  # NOTE: 卷积核大小是1x1
+    S: 1  # 卷积核的高度维度大小
+    Wdilation: 1  # 空洞卷积宽度
+    Wstride: 1  # 水平方向移动步长
+    # type: "C2D"  # NOTE: 设置会报错
+  shape:
+    coefficients:
+    - default: 1
+      name: Wstride
+    - default: 1
+      name: Hstride
+    - default: 1
+      name: Wdilation
+    - default: 1
+      name: Hdilation
+    data_spaces:
+    - name: Weights
+      projection:
+      # - - - H  # FIXME: 为什么会跟这个参数相关？
+      - - - C
+      - - - K
+      - - - R
+      - - - S
+    - name: Inputs
+      projection:
+      - - - N
+      # - - - H  # FIXME: 应该不再需要这个
+      - - - C
+      - - - R
+          - Wdilation
+        - - P
+          - Wstride
+      - - - S
+          - Hdilation
+        - - Q
+          - Hstride
+    - name: Outputs
+      projection:
+      - - - N
+      # - - - H  # FIXME: 应该不再需要这个
+      - - - K
+      - - - Q
+      - - - P
+      read_write: true
+    dimensions:
+    # - H  # FIXME: 应该不再需要这个
+    - C
+    - K
+    - R
+    - S
+    - N
+    - P
+    - Q
+    name: CNN_Layer
+
+#####
+# weight: [C, K, R, S], (输入通道， 输出通道， 卷积核宽度， 卷积核高度)
+# inputs: [N, C, PRS, QRS], (批量处理， 输入通道， 特征图宽度， 特征图高度)
+# outputs: [N, K, Q, P], (批量处理， 输出通道， 特征图宽度， 特征图高度)

@@ -1,0 +1,132 @@
+architecture:
+  version: 0.4
+  nodes:
+  - !Container
+    name: System
+    attributes:
+      technology: "40nm"
+      global_cycle_seconds: 1e-9
+      datawidth: 8
+
+  - !Component
+    name: DRAM
+    class: DRAM
+    attributes:
+      # type: "LPDDR4"
+      cluster_size: 1
+      read_bandwidth: 1
+      write_bandwidth: 1
+      block_size: 8  # FIXME: 该信息如何修改？运行报错:  Assertion `width % (word_bits * block_size) == 0
+      datawidth: 8
+      width: 64  # FIXME: 人为补充，否则报错
+
+  - !Container
+    name: Chip
+    attributes:
+      technology: "40nm"
+
+  - !Component
+    name: GlobalBuffer
+    class: SRAM
+    attributes:
+      block_size: 8
+      cluster_size: 1
+      depth: 8192
+      num_banks: 256
+      num_ports: 2
+      read_bandwidth: 2
+      width: 64
+      datawidth: 8
+      write_bandwidth: 2
+  
+  - !Container
+    name: PE
+    spatial: {meshX: 16} 
+  # # # FIXME: 是否必要用Parallel? 貌似不能？
+  - !Parallel  # # 定义一组并行工作的组件 (它们共享一个父级，但内部并行)
+    nodes:
+  # 根据ChatGPT的提示：https://chatgpt.com/c/68f9ded9-41fc-8322-8e58-e46ac46e65b3
+  # imeloop 的 architecture 层描述中并不支持在 Container 下直接放置 !Parallel 节点
+  # 但是练习仓库的06教程就用到了！
+    - !Component
+      name: InputBuffer  
+      class: regfile  
+      attributes:
+        block_size: 4
+        cluster_size: 1
+        depth: 2048  
+        width: 32
+        num_banks: 1
+        num_ports: 2
+        read_bandwidth: 2
+        write_bandwidth: 2
+        datawidth: 8
+
+    - !Component
+      name: WeightBuffer
+      class: regfile  
+      attributes:
+        block_size: 4
+        cluster_size: 1
+        depth: 8192
+        width: 32
+        num_banks: 8
+        num_ports: 1
+        datawidth: 8
+        read_bandwidth: 2
+        write_bandwidth: 2
+
+    - !Component
+      name: AccumulationBuffer
+      class: regfile  
+      attributes:
+        block_size: 4
+        cluster_size: 1
+        depth: 768
+        network-word-bits: 16
+        num_banks: 2
+        num_ports: 2
+        read_bandwidth: 2
+        width: 96
+        datawidth: 24
+        write_bandwidth: 2
+
+  # FIXME: 不属于上面的parallel
+  # 但是为什么v2版本中，5个组件的定义模式的一模一样的？
+
+  # NOTE: 参考练习仓库中，exericse_06中的v2/v4版本的改造方式！
+  #     它们也是从并列的subtree分割成这样！
+
+  # FIXME: 这样运行报错：ERROR: cannot find spatial tiling level associated with storage level AccumulationBuffer. This is because the number of instances of the next-inner level (inter_Registers_spatial) is the same as this level, which means there cannot be a spatial fanout.
+  ######################
+  # 尝试引入一个container:
+  - !Container
+    name: reg_mac
+    spatial: {meshX: 16}  # meshX还是meshY?
+  ######################  
+  - !Component
+    name: Registers
+    # spatial: {meshX: 64}  # meshX还是meshY?
+    class: regfile  
+    attributes:
+      block_size: 1
+      cluster_size: 1
+      depth: 1
+      num_banks: 8
+      num_ports: 2
+      read_bandwidth: 2
+      width: 8
+      datawidth: 8
+      write_bandwidth: 2
+
+  - !Component
+      name: MACC
+      # spatial: {meshX: 64}  # meshX还是meshY?
+      class: intmac  
+      attributes:
+        cluster_size: 1
+        datawidth: 8
+        # FIXME: 运行报错: AttributeError: Attribute multiplier_width for compound class intmac must be specified.
+        multiplier_width: 8 # 乘数位宽 8 bit
+        # FIXME: 运行报错: Attribute adder_width for compound class intmac must be specified
+        adder_width: 16 # 加法器位宽 16 bit

@@ -1,0 +1,13 @@
+mapper:
+  version: 0.4
+  optimization_metrics: [ delay, energy ]
+  live_status: true  # 触发一个基于ncurses的UI屏幕，允许您跟踪所有映射器线程的活动
+  num_threads: 8
+  timeout: 15000  # *拒绝的连续无效映射>=`timeout` 也会终止搜索
+  victory_condition: 100  #FIXME: 什么意思？根据输出结果和README, 其应该是"自上次更新最优映射以来评估的次优有效映射"，也就说，如果搜了那么多次都没能找到一个更优解，就停止搜索 “Consecutive invalid mappings rejected >= `timeout`.”
+  #FIXME：这是什么策略？
+  # 运行时会触发:
+  #   STATEMENT: 500 suboptimal mappings found since the last upgrade, terminating search.
+  #   等等，导致不能搜索整个mapspace
+  algorithm: random_pruned 
+  max_permutations_per_if_visit: 16

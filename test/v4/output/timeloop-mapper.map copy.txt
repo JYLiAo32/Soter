@@ -1,0 +1,45 @@
+DRAM [ Weights:524288 (524288) Inputs:3211264 (3211264) Outputs:1605632 (1605632) ]   # 各张量的元素数量(维度相乘)
+-----------------------------------------------------------------------------------
+| for N in [0:2)
+|   for Q in [0:2)
+
+GlobalBuffer [ ] 
+----------------
+|     for P in [0:7)
+|       for N in [0:2)
+|         for K in [0:4)
+|           for C in [0:4)
+
+inter_PE_spatial [ ] 
+--------------------
+|             for Q in [0:7) (Spatial-X)  # 利用率无法打满：14/16
+|               for C in [0:2) (Spatial-X)
+
+InputBuffer [ Inputs:1024 (1024) ] 
+----------------------------------
+|                 for C in [0:4)
+|                   for K in [0:8)
+|                     for P in [0:2)
+|                       for N in [0:2)
+
+inter_distributed_buffers_spatial [ ] 
+-------------------------------------
+|                         for K in [0:4) (Spatial-Y)
+
+PEWeightBuffer [ Weights:128 (128) ] 
+------------------------------------
+|                           for N in [0:2)
+|                             for K in [0:2)
+
+PEAccuBuffer [ Outputs:2 (2) ] 
+------------------------------
+|                               for C in [0:8)
+|                                 for K in [0:2)
+
+inter_reg_mac_spatial [ ] 
+-------------------------
+|                                   for C in [0:4) (Spatial-Y)
+
+PEWeightRegs [ Weights:1 (1) ] 
+------------------------------
+|                                     << Compute >>

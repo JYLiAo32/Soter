@@ -1,0 +1,122 @@
+# NOTE: 取自: SpatialAccelerators_v4/Simba/arch.yaml
+architecture:
+  version: 0.4 
+  nodes: # 所有的组件都在这个顶层列表中定义
+  - !Container
+    name: System
+    attributes:
+      datawidth: 8 # 默认数据位宽
+      technology: "45nm" # NOTE: v2版本中是40nm, v4版本中是45nm
+      global_cycle_seconds: 1e-9  # NOTE: 必须设定的属性
+
+
+  - !Component
+    name: DRAM
+    class: DRAM
+    attributes:
+      type: "LPDDR4"  # NOTE: 旧版没有定义类型
+      width: 64 # DRAM 位宽（数据总线宽度）
+      datawidth: 8 # 数据的位宽
+  
+  - !Component
+    name: GlobalBuffer
+    class: SRAM
+    attributes:
+      datawidth: 8
+      depth: 2048 # 原取值: 8192
+      width: 256 # 原取值: 64
+      n_banks: 4   # 原取值：256
+      nports: 2  
+
+  - !Container
+    name: PE
+    # name: PE[0..15]  # NOTE: 这应该是旧版的命名方式
+    spatial: {meshX: 16} # 定义 16 个 PE 的空间阵列
+    # TODO: 定义 spatial constraints
+    # 约束也可以另起文件单独设定
+
+  - !Component
+    name: InputBuffer  # NOTE: 可以随意命名
+    # class: regfile  #  旧版分类？
+    class: smartbuffer_RF  # exercise仓库里有用到此类做法
+    # class: storage  # NOTE：新版教程的component的class只有storage和compute两种，但exercise仓库里有更细粒度的分类
+    # subclass: smartbuffer_RF
+    attributes:
+      datawidth: 8
+      depth: 8192 # 原取值: 2048
+      width: 64 # 原取值: 32
+    # FIXME: 新增约束
+    constraints:
+      # 数据空间约束：只存储 Inputs
+      dataspace: {keep: [Inputs], bypass: [Weights, Outputs]}
+
+  
+  # --- 分布式缓冲区容器 ---
+  - !Container # 这是一个容器，用于定义权重通道的分布
+    name: distributed_buffers
+    spatial: {meshY: 4} # 定义一个 1D 阵列，包含 4 个分布式缓冲区沿 Y 轴分布
+    constraints:
+      # 空间映射约束：所有维度因子为 1，这意味着主要空间并行维度是 K (Output Channel)
+      # spatial: {factors: P=1 Q=1 R=1 S=1 C=1 N=1, permutation: [K, C, Q, R, S, P, N]}
+      spatial: {factors: [P=1, Q=1, R=1, S=1, C=1, N=1], permutation: [K, C, Q, R, S, P, N]}
+      
+
+  - !Parallel # 定义一组并行工作的组件 (它们共享一个父级，但内部并行)
+    nodes:
+    - !Component # 权重缓冲区
+      name: PEWeightBuffer
+      class: smartbuffer_RF
+      # class: storage
+      # subclass: smartbuffer_RF
+      attributes:
+        depth: 4096
+        width: 64
+        datawidth: 8
+        n_banks: 8
+      constraints:
+        # 数据空间约束：只存储 Weights
+        dataspace: {keep: [Weights], bypass: [Inputs, Outputs]}
+  
+    - !Component # 累加器缓冲区
+      name: PEAccuBuffer
+      class: smartbuffer_RF
+      # class: storage
+      # subclass: smartbuffer_RF
+      attributes:
+        depth: 128
+        datawidth: 24 # 24 bit 累加位宽 (用于高精度累加)
+        width: 24
+      constraints:
+        # 数据空间约束：只存储 Outputs (用于累加)
+        dataspace: {keep: [Outputs], bypass: [Inputs, Weights]}
+  
+    - !Nothing {constraints: {dataspace: {keep: [Inputs]}}} # 一个空组件，可能用于占位或定义隐式连接/数据流
+  
+
+  - !Container # 更深一层的容器, 还是属于distributed_buffers (# Four registers/MAC pairs per distributed buffer)
+    name: reg_mac
+    spatial: {meshY: 4} # 芯片中共存在4x4=16个MAC/registers
+    constraints:
+      # spatial: {factors: P=1 Q=1 R=1 S=1 K=1 N=1, permutation: [C, K, Q, R, S, P, N]}
+      spatial: {factors: [P=1, Q=1, R=1, S=1, K=1, N=1], permutation: [C, K, Q, R, S, P, N]}
+  
+  - !Component # 最低级的权重寄存器 (MAC 单元输入)
+    name: PEWeightRegs
+    class: smartbuffer_RF
+  # class: storage
+  # subclass: smartbuffer_RF
+    attributes:
+      depth: 1 
+      width: 512 # 512 位宽
+      cluster_size: 64 # FIXME: 簇大小 64，可能表示 64 个寄存器
+      num_ports: 2
+      datawidth: 8
+    constraints:
+      dataspace: {keep: [Weights], bypass: [Inputs, Outputs]}
+  
+  - !Component # 乘法累加单元
+    name: mac
+    class: intmac # FIXME:旧版中存在64个MAC/registers, 为什么这里没有?    # exercise仓库的example_designs/simba_like的readme文档提到: We have reduced the number of MACs inside each PE from 64 to 16.
+    attributes:
+      multiplier_width: 8 # 乘数位宽 8 bit
+      adder_width: 16 # 加法器位宽 16 bit

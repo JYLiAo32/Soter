@@ -5,12 +5,12 @@ import inspect
 THIS_SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 
 
-path_arch = "/home/ljy/workspace/mapping/Soter/test/v4/arch.yaml"
-path_prob = "/home/ljy/workspace/mapping/Soter/test/v4/problem.yaml"
-path_map = "/home/ljy/workspace/mapping/Soter/test/v4/map.yaml"
-path_component = "/home/ljy/workspace/mapping/Soter/test/v4/components/*.yaml"
-output_path = "/home/ljy/workspace/mapping/Soter/test/v4/output"
-path_mapper = "/home/ljy/workspace/mapping/Soter/test/v4/mapper.yaml"
+path_arch = "/home/ljy/workspace/mapping/Soter/test/v4_soter/simba_arch.yaml"
+path_prob = "/home/ljy/workspace/mapping/Soter/test/v4_soter/problem.yaml"
+path_map = "/home/ljy/workspace/mapping/Soter/test/v4_soter/map.yaml"
+path_component = "/home/ljy/workspace/mapping/Soter/test/v4_soter/components/*.yaml"
+output_path = "/home/ljy/workspace/mapping/Soter/test/v4_soter/output"
+path_mapper = "/home/ljy/workspace/mapping/Soter/test/v4_soter/mapper.yaml"
 
 
 def run_01():
