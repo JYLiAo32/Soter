@@ -21,6 +21,9 @@ architecture:
       datawidth: 8
       # width: 64  # FIXME: 人为补充，否则报错
       width: 512
+      # 参考spatialAccelerators/simba/mapspace.yaml的配置补全约束:
+      constraints:
+        dataspace: {keep: [Inputs, Outputs, Weights], bypass: []}    
 
   - !Container
     name: Chip
@@ -40,7 +43,10 @@ architecture:
       width: 64
       datawidth: 8
       write_bandwidth: 2
-  
+      # 参考spatialAccelerators/simba/mapspace.yaml的配置补全约束:
+      constraints:
+        dataspace: {keep: [Inputs, Outputs], bypass: [Weights]}  
+
   - !Container
     name: PE
     spatial: {meshX: 16} 
@@ -65,11 +71,11 @@ architecture:
         datawidth: 8
       constraints:
         dataspace: {keep: [Inputs], bypass: [Weights, Outputs]}        
-        # TODO: 是否需要补充temporal约束？
-        # 参考exercise_06的eyeriss_like配置:
-        temporal:
-          permutation: [N, K, C, P, Q, R, S] 
-          factors: [N=1, K=1, C=1, P=1, Q=1, R=1, S=1]  # 完整传入
+        # # TODO: 是否需要补充temporal约束？
+        # # 参考exercise_06的eyeriss_like配置:
+        # temporal:
+        #   permutation: [N, K, C, P, Q, R, S] 
+        #   factors: [N=1, K=1, C=1, P=1, Q=1, R=1, S=1]  # 完整传入
 
     - !Component
       name: WeightBuffer
@@ -87,10 +93,10 @@ architecture:
       constraints:
         dataspace: {keep: [Weights], bypass: [Inputs, Outputs]}        
         # TODO: 是否需要补充temporal约束？
-        # 参考exercise_06的eyeriss_like配置:
-        temporal:
-          permutation: [N, K, P, Q, S, C, R]
-          factors: [N=1, K=1, P=1, Q=1, S=1]
+        # # 参考exercise_06的eyeriss_like配置:
+        # temporal:
+        #   permutation: [N, K, P, Q, S, C, R]
+        #   factors: [N=1, K=1, P=1, Q=1, S=1]
 
     - !Component
       name: AccumulationBuffer
@@ -109,9 +115,9 @@ architecture:
       constraints:
         dataspace: {keep: [Outputs], bypass: [Inputs, Weights]}        
         # TODO: 是否需要补充temporal约束？
-        temporal:
-          permutation: [N, C, P, Q, R, S, K] 
-          factors: [N=1, C=1, R=1, S=1, P=1, Q=1]
+        # temporal:
+        #   permutation: [N, C, P, Q, R, S, K] 
+        #   factors: [N=1, C=1, R=1, S=1, P=1, Q=1]
 
   # FIXME: 不属于上面的parallel
   # 但是为什么v2版本中，5个组件的定义模式的一模一样的？
@@ -141,6 +147,9 @@ architecture:
       width: 8
       datawidth: 8
       write_bandwidth: 2
+      # 参考spatialAccelerators/simba/mapspace.yaml的配置补全约束:
+      constraints:
+        dataspace: {keep: [Weights], bypass: [Outputs, Inputs]}  # FIXME: 寄存器只存权重？        
 
   - !Component
       name: MACC
