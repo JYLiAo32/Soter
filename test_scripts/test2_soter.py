@@ -20,7 +20,7 @@ def run_01():
             path_prob,
             path_map,
         )
-    tl.call_model(spec, output_dir=output_path)
+    tl.call_model(spec, output_dir=os.path.join(output_path, "model"))
 
 def run_02():
     spec = tl.Specification.from_yaml_files(
@@ -29,7 +29,7 @@ def run_02():
             path_prob,
             path_mapper,
         )
-    tl.call_mapper(spec, output_dir=output_path)
+    tl.call_mapper(spec, output_dir=os.path.join(output_path, "mapping"))
 
 
 if __name__ == "__main__":

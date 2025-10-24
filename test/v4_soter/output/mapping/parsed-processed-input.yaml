@@ -17,9 +17,9 @@ architecture:
                 cluster_size: 1
                 read_bandwidth: 1
                 write_bandwidth: 1
-                block_size: 8
+                block_size: 64
                 datawidth: 8
-                width: 64
+                width: 512
                 has_power_gating: false
                 n_banks: 2
                 reduction_supported: true
@@ -32,9 +32,9 @@ architecture:
                 global_cycle_seconds: 1e-9
                 power_gated_at: null
             required_actions:
-              - leak
-              - update
               - read
+              - update
+              - leak
               - write
             enabled: true
           - name: GlobalBuffer[1..1]
@@ -61,9 +61,9 @@ architecture:
                 global_cycle_seconds: 1e-9
                 power_gated_at: null
             required_actions:
-              - leak
-              - update
               - read
+              - update
+              - leak
               - write
             enabled: true
           - name: inter_PE_spatial[1..1]
@@ -90,7 +90,7 @@ architecture:
             attributes:
                 block_size: 4
                 cluster_size: 1
-                depth: 20480
+                depth: 2048
                 width: 32
                 num_banks: 1
                 num_ports: 2
@@ -109,9 +109,9 @@ architecture:
                 global_cycle_seconds: 1e-9
                 power_gated_at: null
             required_actions:
-              - leak
-              - update
               - read
+              - update
+              - leak
               - write
             enabled: true
           - name: WeightBuffer[1..16]
@@ -138,9 +138,9 @@ architecture:
                 global_cycle_seconds: 1e-9
                 power_gated_at: null
             required_actions:
-              - leak
-              - update
               - read
+              - update
+              - leak
               - write
             enabled: true
           - name: AccumulationBuffer[1..16]
@@ -168,9 +168,9 @@ architecture:
                 global_cycle_seconds: 1e-9
                 power_gated_at: null
             required_actions:
-              - leak
-              - update
               - read
+              - update
+              - leak
               - write
             enabled: true
           - name: inter_reg_mac_spatial[1..16]
@@ -192,7 +192,7 @@ architecture:
                 global_cycle_seconds: 1e-9
                 power_gated_at: null
             enabled: true
-          - name: Registers[1..256]
+          - name: Registers[1..1024]
             class: regfile
             attributes:
                 block_size: 1
@@ -210,18 +210,18 @@ architecture:
                 multiple_buffering: 1
                 min_utilization: 0
                 allow_overbooking: false
-                meshX: 256
+                meshX: 1024
                 meshY: 1
                 technology: "40nm"
                 global_cycle_seconds: 1e-9
                 power_gated_at: null
             required_actions:
-              - leak
-              - update
               - read
+              - update
+              - leak
               - write
             enabled: true
-          - name: MACC[1..256]
+          - name: MACC[1..1024]
             class: intmac
             attributes:
                 cluster_size: 1
@@ -229,7 +229,7 @@ architecture:
                 multiplier_width: 8
                 adder_width: 16
                 has_power_gating: false
-                meshX: 256
+                meshX: 1024
                 meshY: 1
                 technology: "40nm"
                 global_cycle_seconds: 1e-9
@@ -238,7 +238,75 @@ architecture:
               - compute
             enabled: true
 architecture_constraints:
-    targets: []
+    targets:
+      - type: temporal
+        permutation: SR
+        target: DRAM
+      - type: temporal
+        permutation: SR
+        target: GlobalBuffer
+      - type: spatial
+        permutation: SR
+        target: inter_PE_spatial
+      - factors: C=1,K=1,R=1,S=1,N=1,P=1,Q=1
+        permutation: CKRSNPQ
+        type: temporal
+        target: inter_PE_spatial
+      - bypass:
+          - Weights
+          - Inputs
+          - Outputs
+        type: bypass
+        target: inter_PE_spatial
+      - keep:
+          - Inputs
+        bypass:
+          - Weights
+          - Outputs
+        type: bypass
+        target: InputBuffer
+      - permutation: NKCPQRS
+        factors: N=1,K=1,C=1,P=1,Q=1,R=1,S=1
+        type: temporal
+        target: InputBuffer
+      - keep:
+          - Weights
+        bypass:
+          - Inputs
+          - Outputs
+        type: bypass
+        target: WeightBuffer
+      - permutation: NKPQSCR
+        factors: N=1,K=1,P=1,Q=1,S=1
+        type: temporal
+        target: WeightBuffer
+      - keep:
+          - Outputs
+        bypass:
+          - Inputs
+          - Weights
+        type: bypass
+        target: AccumulationBuffer
+      - permutation: NCPQRSK
+        factors: N=1,C=1,R=1,S=1,P=1,Q=1
+        type: temporal
+        target: AccumulationBuffer
+      - type: spatial
+        permutation: SR
+        target: inter_reg_mac_spatial
+      - factors: C=1,K=1,R=1,S=1,N=1,P=1,Q=1
+        permutation: CKRSNPQ
+        type: temporal
+        target: inter_reg_mac_spatial
+      - bypass:
+          - Weights
+          - Inputs
+          - Outputs
+        type: bypass
+        target: inter_reg_mac_spatial
+      - type: temporal
+        permutation: SR
+        target: Registers
 problem:
     version: '0.4'
     instance:
@@ -526,120 +594,32 @@ compound_components:
               - name: address_generators[0]
                 actions:
                   - name: add
-mapping:
-  - target: DRAM
-    type: temporal
-    factors: C=32,K=4,N=8,P=1,Q=1,R=1,S=1
-    permutation: PNQKSCR
-  - target: DRAM
-    type: bypass
-    keep:
-      - Weights
-      - Inputs
-      - Outputs
-  - target: GlobalBuffer
-    type: temporal
-    factors: C=1,K=1,N=1,P=1,Q=1,R=1,S=1
-    permutation: CRQPNSK
-  - target: GlobalBuffer
-    type: bypass
-    keep:
-      - Inputs
-      - Outputs
-    bypass:
-      - Weights
-  - type: spatial
-    permutation: SR
-    target: inter_PE_spatial
-  - factors: C=1,K=1,R=1,S=1,N=1,P=1,Q=1
-    permutation: CKRSNPQ
-    type: temporal
-    target: inter_PE_spatial
-  - bypass:
-      - Weights
-      - Inputs
-      - Outputs
-    type: bypass
-    target: inter_PE_spatial
-  - target: InputBuffer
-    type: temporal
-    factors: C=1,K=8,N=1,P=1,Q=1,R=1,S=1
-    permutation: PCNQKSR
-  - target: InputBuffer
-    type: bypass
-    keep:
-      - Inputs
-    bypass:
-      - Weights
-      - Outputs
-  - target: WeightBuffer
-    type: temporal
-    factors: C=4,K=2,N=2,P=1,Q=1,R=1,S=1
-    permutation: PQNRSCK
-  - target: WeightBuffer
-    type: bypass
-    keep:
-      - Weights
-    bypass:
-      - Inputs
-      - Outputs
-  - target: AccumulationBuffer
-    type: temporal
-    factors: C=8,K=8,N=1,P=2,Q=2,R=1,S=1
-    permutation: SNPKQRC
-  - target: AccumulationBuffer
-    type: bypass
-    keep:
-      - Outputs
-    bypass:
-      - Weights
-      - Inputs
-  - type: spatial
-    permutation: SR
-    target: inter_reg_mac_spatial
-  - factors: C=1,K=1,R=1,S=1,N=1,P=1,Q=1
-    permutation: CKRSNPQ
-    type: temporal
-    target: inter_reg_mac_spatial
-  - bypass:
-      - Weights
-      - Inputs
-      - Outputs
-    type: bypass
-    target: inter_reg_mac_spatial
-  - target: Registers
-    type: temporal
-    factors: C=1,K=1,N=1,P=7,Q=7,R=1,S=1
-    permutation: KRSCPQN
-  - target: Registers
-    type: bypass
-    keep:
-      - Weights
-    bypass:
-      - Inputs
-      - Outputs
+mapping: []
 mapper:
+    optimization_metrics:
+      - delay
+      - energy
     version: '0.4'
-    out_prefix: timeloop-mapper
+    live_status: true
     num_threads: 8
+    timeout: 1500
+    victory_condition: 100
+    algorithm: random_pruned
+    max_permutations_per_if_visit: 16
+    out_prefix: timeloop-mapper
     optimization_metric: []
     search_size: null
-    timeout: 1000
-    victory_condition: null
     sync_interval: null
     log_interval: 1
     log_oaves: false
     log_oaves_mappings: false
     log_stats: false
     log_suboptimal: false
-    live_status: false
     diagnostics: false
     penalize_consecutive_bypass_fails: false
     emit_whoop_nest: false
     max_temporal_loops_in_a_mapping: -1
-    algorithm: hybrid
     filter_revisits: false
-    max_permutations_per_if_visit: 16
 mapspace:
     version: '0.4'
     template: uber

@@ -1,0 +1,106 @@
+ERT_summary:
+    version: '0.4'
+    table_summary:
+      - name: System_top_level.DRAM[1..1]
+        actions:
+          - name: read
+            energy: 4096.0
+          - name: update
+            energy: 4096.0
+          - name: leak
+            energy: 0.0
+          - name: write
+            energy: 4096.0
+        primitive_estimation(s):
+          - name: System_top_level.DRAM[1..1]
+            estimator: CactiDRAM
+      - name: System_top_level.GlobalBuffer[1..1]
+        actions:
+          - name: read
+            energy: 20.366
+          - name: update
+            energy: 15.7295
+          - name: leak
+            energy: 0.00214707
+          - name: write
+            energy: 15.7295
+        primitive_estimation(s):
+          - name: System_top_level.GlobalBuffer[1..1]
+            estimator: CactiSRAM
+      - name: System_top_level.InputBuffer[1..16]
+        actions:
+          - name: write
+            energy: 60.3546
+          - name: read
+            energy: 60.6426
+          - name: leak
+            energy: 0.0514048
+          - name: update
+            energy: 60.3546
+        primitive_estimation(s):
+          - name: storage[1..32]
+            estimator: Library
+          - name: comparator[1..2048]
+            estimator: Library
+          - name: storage[1..65536]
+            estimator: Library
+      - name: System_top_level.WeightBuffer[1..16]
+        actions:
+          - name: write
+            energy: 241.418
+          - name: read
+            energy: 241.706
+          - name: leak
+            energy: 0.205619
+          - name: update
+            energy: 241.418
+        primitive_estimation(s):
+          - name: storage[1..32]
+            estimator: Library
+          - name: comparator[1..8192]
+            estimator: Library
+          - name: storage[1..262144]
+            estimator: Library
+      - name: System_top_level.AccumulationBuffer[1..16]
+        actions:
+          - name: write
+            energy: 22.633
+          - name: read
+            energy: 23.497
+          - name: leak
+            energy: 0.0192768
+          - name: update
+            energy: 22.633
+        primitive_estimation(s):
+          - name: storage[1..96]
+            estimator: Library
+          - name: comparator[1..768]
+            estimator: Library
+          - name: storage[1..73728]
+            estimator: Library
+      - name: System_top_level.Registers[1..1024]
+        actions:
+          - name: write
+            energy: 0.02947
+          - name: read
+            energy: 0.10147
+          - name: leak
+            energy: 2.51e-05
+          - name: update
+            energy: 0.02947
+        primitive_estimation(s):
+          - name: storage[1..8]
+            estimator: Library
+          - name: comparator[1..1]
+            estimator: Library
+      - name: System_top_level.MACC[1..1024]
+        actions:
+          - name: compute
+            energy: 0.315
+          - name: leak
+            energy: 0.0036
+        primitive_estimation(s):
+          - name: intadder
+            estimator: Library
+          - name: intmultiplier
+            estimator: Library

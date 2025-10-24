@@ -1,0 +1,21 @@
+ART:
+    version: '0.4'
+    tables:
+      - name: System_top_level.DRAM[1..1]
+        area: 0.0
+      - name: System_top_level.GlobalBuffer[1..1]
+        area: 176643.0
+      - name: System_top_level.inter_PE_spatial[1..1]
+        area: 1.0
+      - name: System_top_level.inter_reg_mac_spatial[1..16]
+        area: 1.0
+      - name: System_top_level.InputBuffer[1..16]
+        area: 537313.0
+      - name: System_top_level.WeightBuffer[1..16]
+        area: 2149250.0
+      - name: System_top_level.AccumulationBuffer[1..16]
+        area: 495421.0
+      - name: System_top_level.Registers[1..1024]
+        area: 118.84
+      - name: System_top_level.MACC[1..1024]
+        area: 417.0

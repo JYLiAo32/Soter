@@ -4,7 +4,7 @@ architecture:
   - !Container
     name: System
     attributes:
-      technology: "40nm"
+      technology: "40nm"  # 必须指定，否则报错
       global_cycle_seconds: 1e-9
       datawidth: 8
 
@@ -16,14 +16,16 @@ architecture:
       cluster_size: 1
       read_bandwidth: 1
       write_bandwidth: 1
-      block_size: 8  # FIXME: 该信息如何修改？运行报错:  Assertion `width % (word_bits * block_size) == 0
+      # block_size: 8  # FIXME: 该信息如何修改？运行报错:  Assertion `width % (word_bits * block_size) == 0
+      block_size: 64 # 匹配v2设定, 同时改动width
       datawidth: 8
-      width: 64  # FIXME: 人为补充，否则报错
+      # width: 64  # FIXME: 人为补充，否则报错
+      width: 512
 
   - !Container
     name: Chip
     attributes:
-      technology: "40nm"
+      technology: "40nm"  # 有无影响(前面已经定义系统级别的technology): 测试发现没有影响!
 
   - !Component
     name: GlobalBuffer
@@ -61,6 +63,13 @@ architecture:
         read_bandwidth: 2
         write_bandwidth: 2
         datawidth: 8
+      constraints:
+        dataspace: {keep: [Inputs], bypass: [Weights, Outputs]}        
+        # TODO: 是否需要补充temporal约束？
+        # 参考exercise_06的eyeriss_like配置:
+        temporal:
+          permutation: [N, K, C, P, Q, R, S] 
+          factors: [N=1, K=1, C=1, P=1, Q=1, R=1, S=1]  # 完整传入
 
     - !Component
       name: WeightBuffer
@@ -75,6 +84,13 @@ architecture:
         datawidth: 8
         read_bandwidth: 2
         write_bandwidth: 2
+      constraints:
+        dataspace: {keep: [Weights], bypass: [Inputs, Outputs]}        
+        # TODO: 是否需要补充temporal约束？
+        # 参考exercise_06的eyeriss_like配置:
+        temporal:
+          permutation: [N, K, P, Q, S, C, R]
+          factors: [N=1, K=1, P=1, Q=1, S=1]
 
     - !Component
       name: AccumulationBuffer
@@ -90,19 +106,26 @@ architecture:
         width: 96
         datawidth: 24
         write_bandwidth: 2
+      constraints:
+        dataspace: {keep: [Outputs], bypass: [Inputs, Weights]}        
+        # TODO: 是否需要补充temporal约束？
+        temporal:
+          permutation: [N, C, P, Q, R, S, K] 
+          factors: [N=1, C=1, R=1, S=1, P=1, Q=1]
 
   # FIXME: 不属于上面的parallel
   # 但是为什么v2版本中，5个组件的定义模式的一模一样的？
+  # NOTE: 差异应该体现在constraint上(keep/bypass)
 
   # NOTE: 参考练习仓库中，exericse_06中的v2/v4版本的改造方式！
   #     它们也是从并列的subtree分割成这样！
 
   # FIXME: 这样运行报错：ERROR: cannot find spatial tiling level associated with storage level AccumulationBuffer. This is because the number of instances of the next-inner level (inter_Registers_spatial) is the same as this level, which means there cannot be a spatial fanout.
   ######################
-  # 尝试引入一个container:
+  # 引入reg_mac统一定义
   - !Container
     name: reg_mac
-    spatial: {meshX: 16}  # meshX还是meshY?
+    spatial: {meshX: 64}  # meshX还是meshY?
   ######################  
   - !Component
     name: Registers

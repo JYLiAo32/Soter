@@ -1,0 +1,283 @@
+architecture:
+    version: '0.4'
+    local:
+      - name: System_top_level.DRAM[1..1]
+        class: DRAM
+        attributes:
+            cluster_size: 1
+            read_bandwidth: 1
+            write_bandwidth: 1
+            block_size: 64
+            datawidth: 8
+            width: 512
+            has_power_gating: false
+            n_banks: 2
+            reduction_supported: true
+            multiple_buffering: 1
+            min_utilization: 0
+            allow_overbooking: false
+            meshX: 1
+            meshY: 1
+            technology: "40nm"
+            global_cycle_seconds: 1e-09
+            power_gated_at: null
+            version: '0.4'
+            action_latency_cycles: 1
+            cycle_seconds: 1e-09
+            n_instances: 1
+        required_actions:
+          - read
+          - update
+          - leak
+          - write
+        enabled: true
+        area_scale: 1.0
+        energy_scale: 1.0
+      - name: System_top_level.GlobalBuffer[1..1]
+        class: SRAM
+        attributes:
+            block_size: 8
+            cluster_size: 1
+            depth: 8192
+            num_banks: 256
+            num_ports: 2
+            read_bandwidth: 2
+            width: 64
+            datawidth: 8
+            write_bandwidth: 2
+            has_power_gating: false
+            n_banks: 2
+            reduction_supported: true
+            multiple_buffering: 1
+            min_utilization: 0
+            allow_overbooking: false
+            meshX: 1
+            meshY: 1
+            technology: "40nm"
+            global_cycle_seconds: 1e-09
+            power_gated_at: null
+            version: '0.4'
+            action_latency_cycles: 1
+            cycle_seconds: 1e-09
+            n_instances: 1
+        required_actions:
+          - read
+          - update
+          - leak
+          - write
+        enabled: true
+        area_scale: 1.0
+        energy_scale: 1.0
+      - name: System_top_level.inter_PE_spatial[1..1]
+        class: dummy_storage
+        attributes:
+            width: 1
+            depth: 1
+            datawidth: 1
+            technology: -1
+            has_power_gating: false
+            n_banks: 2
+            cluster_size: 1
+            reduction_supported: true
+            multiple_buffering: 1
+            min_utilization: 0
+            allow_overbooking: false
+            meshX: 1
+            meshY: 1
+            global_cycle_seconds: 1e-09
+            power_gated_at: null
+            version: '0.4'
+            action_latency_cycles: 1
+            cycle_seconds: 1e-09
+            n_instances: 1
+        enabled: true
+        area_scale: 1.0
+        energy_scale: 1.0
+      - name: System_top_level.InputBuffer[1..16]
+        class: regfile
+        attributes:
+            block_size: 4
+            cluster_size: 1
+            depth: 2048
+            width: 32
+            num_banks: 1
+            num_ports: 2
+            read_bandwidth: 2
+            write_bandwidth: 2
+            datawidth: 8
+            has_power_gating: false
+            n_banks: 2
+            reduction_supported: true
+            multiple_buffering: 1
+            min_utilization: 0
+            allow_overbooking: false
+            meshX: 16
+            meshY: 1
+            technology: "40nm"
+            global_cycle_seconds: 1e-09
+            power_gated_at: null
+            version: '0.4'
+            action_latency_cycles: 1
+            cycle_seconds: 1e-09
+            n_instances: 1
+        required_actions:
+          - read
+          - update
+          - leak
+          - write
+        enabled: true
+        area_scale: 1.0
+        energy_scale: 1.0
+      - name: System_top_level.WeightBuffer[1..16]
+        class: regfile
+        attributes:
+            block_size: 4
+            cluster_size: 1
+            depth: 8192
+            width: 32
+            num_banks: 8
+            num_ports: 1
+            datawidth: 8
+            read_bandwidth: 2
+            write_bandwidth: 2
+            has_power_gating: false
+            n_banks: 2
+            reduction_supported: true
+            multiple_buffering: 1
+            min_utilization: 0
+            allow_overbooking: false
+            meshX: 16
+            meshY: 1
+            technology: "40nm"
+            global_cycle_seconds: 1e-09
+            power_gated_at: null
+            version: '0.4'
+            action_latency_cycles: 1
+            cycle_seconds: 1e-09
+            n_instances: 1
+        required_actions:
+          - read
+          - update
+          - leak
+          - write
+        enabled: true
+        area_scale: 1.0
+        energy_scale: 1.0
+      - name: System_top_level.AccumulationBuffer[1..16]
+        class: regfile
+        attributes:
+            block_size: 4
+            cluster_size: 1
+            depth: 768
+            network-word-bits: 16
+            num_banks: 2
+            num_ports: 2
+            read_bandwidth: 2
+            width: 96
+            datawidth: 24
+            write_bandwidth: 2
+            has_power_gating: false
+            n_banks: 2
+            reduction_supported: true
+            multiple_buffering: 1
+            min_utilization: 0
+            allow_overbooking: false
+            meshX: 16
+            meshY: 1
+            technology: "40nm"
+            global_cycle_seconds: 1e-09
+            power_gated_at: null
+            version: '0.4'
+            action_latency_cycles: 1
+            cycle_seconds: 1e-09
+            n_instances: 1
+        required_actions:
+          - read
+          - update
+          - leak
+          - write
+        enabled: true
+        area_scale: 1.0
+        energy_scale: 1.0
+      - name: System_top_level.inter_reg_mac_spatial[1..16]
+        class: dummy_storage
+        attributes:
+            width: 1
+            depth: 1
+            datawidth: 1
+            technology: -1
+            has_power_gating: false
+            n_banks: 2
+            cluster_size: 1
+            reduction_supported: true
+            multiple_buffering: 1
+            min_utilization: 0
+            allow_overbooking: false
+            meshX: 16
+            meshY: 1
+            global_cycle_seconds: 1e-09
+            power_gated_at: null
+            version: '0.4'
+            action_latency_cycles: 1
+            cycle_seconds: 1e-09
+            n_instances: 1
+        enabled: true
+        area_scale: 1.0
+        energy_scale: 1.0
+      - name: System_top_level.Registers[1..1024]
+        class: regfile
+        attributes:
+            block_size: 1
+            cluster_size: 1
+            depth: 1
+            num_banks: 8
+            num_ports: 2
+            read_bandwidth: 2
+            width: 8
+            datawidth: 8
+            write_bandwidth: 2
+            has_power_gating: false
+            n_banks: 2
+            reduction_supported: true
+            multiple_buffering: 1
+            min_utilization: 0
+            allow_overbooking: false
+            meshX: 1024
+            meshY: 1
+            technology: "40nm"
+            global_cycle_seconds: 1e-09
+            power_gated_at: null
+            version: '0.4'
+            action_latency_cycles: 1
+            cycle_seconds: 1e-09
+            n_instances: 1
+        required_actions:
+          - read
+          - update
+          - leak
+          - write
+        enabled: true
+        area_scale: 1.0
+        energy_scale: 1.0
+      - name: System_top_level.MACC[1..1024]
+        class: intmac
+        attributes:
+            cluster_size: 1
+            datawidth: 8
+            multiplier_width: 8
+            adder_width: 16
+            has_power_gating: false
+            meshX: 1024
+            meshY: 1
+            technology: "40nm"
+            global_cycle_seconds: 1e-09
+            power_gated_at: null
+            version: '0.4'
+            action_latency_cycles: 1
+            cycle_seconds: 1e-09
+            n_instances: 1
+        required_actions:
+          - compute
+        enabled: true
+        area_scale: 1.0
+        energy_scale: 1.0

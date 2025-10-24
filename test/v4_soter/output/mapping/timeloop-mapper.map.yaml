@@ -1,0 +1,103 @@
+mapping:
+  - target: Registers
+    type: datatype
+    keep:
+      []
+    bypass:
+      - Weights
+      - Inputs
+      - Outputs
+  - target: inter_reg_mac_spatial
+    type: datatype
+    keep:
+      []
+    bypass:
+      - Weights
+      - Inputs
+      - Outputs
+  - target: AccumulationBuffer
+    type: datatype
+    keep:
+      - Outputs
+    bypass:
+      - Weights
+      - Inputs
+  - target: WeightBuffer
+    type: datatype
+    keep:
+      - Weights
+    bypass:
+      - Inputs
+      - Outputs
+  - target: InputBuffer
+    type: datatype
+    keep:
+      - Inputs
+    bypass:
+      - Weights
+      - Outputs
+  - target: inter_PE_spatial
+    type: datatype
+    keep:
+      []
+    bypass:
+      - Weights
+      - Inputs
+      - Outputs
+  - target: GlobalBuffer
+    type: datatype
+    keep:
+      - Outputs
+    bypass:
+      - Weights
+      - Inputs
+  - target: DRAM
+    type: datatype
+    keep:
+      - Weights
+      - Inputs
+      - Outputs
+    bypass:
+      []
+  - target: Registers
+    type: temporal
+    factors: C16 K4 R1 S1 N1 P1 Q7
+    permutation: CKQRSNP
+  - target: inter_reg_mac_spatial
+    type: spatial
+    factors: C4 K8 R1 S1 N1 P2 Q1
+    permutation: CPKRSNQ
+    split: 3
+  - target: inter_reg_mac_spatial
+    type: temporal
+    factors: C1 K1 R1 S1 N1 P1 Q1
+    permutation: CKRSNPQ
+  - target: AccumulationBuffer
+    type: temporal
+    factors: C1 K2 R1 S1 N1 P1 Q1
+    permutation: KCRSNPQ
+  - target: WeightBuffer
+    type: temporal
+    factors: C4 K1 R1 S1 N1 P1 Q1
+    permutation: CKRSNPQ
+  - target: InputBuffer
+    type: temporal
+    factors: C1 K1 R1 S1 N1 P1 Q1
+    permutation: CKRSNPQ
+  - target: inter_PE_spatial
+    type: spatial
+    factors: C1 K8 R1 S1 N2 P1 Q1
+    permutation: KNCRSPQ
+    split: 2
+  - target: inter_PE_spatial
+    type: temporal
+    factors: C1 K1 R1 S1 N1 P1 Q1
+    permutation: CKRSNPQ
+  - target: GlobalBuffer
+    type: temporal
+    factors: C2 K1 R1 S1 N2 P1 Q2
+    permutation: NQCKRSP
+  - target: DRAM
+    type: temporal
+    factors: C2 K1 R1 S1 N4 P7 Q1
+    permutation: CPNKRSQ

@@ -1,0 +1,50 @@
+ART_summary:
+    version: '0.4'
+    table_summary:
+      - name: System_top_level.DRAM[1..1]
+        area: 0.0
+        primitive_estimations: CactiDRAM
+      - name: System_top_level.GlobalBuffer[1..1]
+        area: 176643.0
+        primitive_estimations: CactiSRAM
+      - name: System_top_level.inter_PE_spatial[1..1]
+        area: 1.0
+        primitive_estimations: dummy
+      - name: System_top_level.inter_reg_mac_spatial[1..16]
+        area: 1.0
+        primitive_estimations: dummy
+      - name: System_top_level.InputBuffer[1..16]
+        area: 537313.0
+        primitive_estimations:
+          - name: storage[1..65536]
+            estimator: Library
+          - name: comparator[1..2048]
+            estimator: Library
+      - name: System_top_level.WeightBuffer[1..16]
+        area: 2149250.0
+        primitive_estimations:
+          - name: storage[1..262144]
+            estimator: Library
+          - name: comparator[1..8192]
+            estimator: Library
+      - name: System_top_level.AccumulationBuffer[1..16]
+        area: 495421.0
+        primitive_estimations:
+          - name: storage[1..73728]
+            estimator: Library
+          - name: comparator[1..768]
+            estimator: Library
+      - name: System_top_level.Registers[1..1024]
+        area: 118.84
+        primitive_estimations:
+          - name: storage[1..8]
+            estimator: Library
+          - name: comparator[1..1]
+            estimator: Library
+      - name: System_top_level.MACC[1..1024]
+        area: 417.0
+        primitive_estimations:
+          - name: intadder
+            estimator: Library
+          - name: intmultiplier
+            estimator: Library
