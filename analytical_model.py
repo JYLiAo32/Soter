@@ -6,9 +6,13 @@ import copy
 import torch
 import torch.nn.functional as F
 
+"""
+    # FIXME: 新版配置文件中, operator_instance 下已经不能有type属性, 否则会报错, 需要修改设定方式
+"""
 
 class Model(object):
-    def __init__(self, prime2idx, buffer_size_list, buf_spmap_cstr, steps_per_level, operator_instance, accelerator):
+    def __init__(self, prime2idx, buffer_size_list, buf_spmap_cstr, steps_per_level, operator_instance, accelerator,
+                 operator_type: str):
         super().__init__()
 
         self.prime2idx = prime2idx
@@ -19,6 +23,7 @@ class Model(object):
         self.buf_spmap_cstr = buf_spmap_cstr
         self.steps_per_level = steps_per_level
         self.operator_instance = operator_instance
+        self.operator_type = operator_type
         self.accelerator = accelerator
 
     def get_remain_buffer_size(self, cur_buffer_level, program_seq_disorder, loop_ind):
@@ -52,16 +57,16 @@ class Model(object):
             Q = program_seq_disorder.new_zeros(batch_size)
         elif cur_buffer_level == 2:  # pe acc
             C = program_seq_disorder.new_zeros(batch_size)
-            if self.operator_instance['type'] == 'C2D':
+            if self.operator_type == 'C2D':
                 R = program_seq_disorder.new_zeros(batch_size)
                 S = program_seq_disorder.new_zeros(batch_size)
         elif cur_buffer_level == 4:  # pe input
             K = program_seq_disorder.new_zeros(batch_size)
-            if self.operator_instance['type'] == 'T2D':
+            if self.operator_type == 'T2D':
                 R = program_seq_disorder.new_zeros(batch_size)
                 S = program_seq_disorder.new_zeros(batch_size)
 
-        if self.operator_instance['type'] == 'C2D':
+        if self.operator_type == 'C2D':
             input_tile = N * ((P - 1) * wstride + 1 + wdilation * (R - 1)) * ((Q - 1) * hstride + 1 + hdilation * (S - 1)) * C * H
             weight_tile = K * R * S * C * H
             output_tile = P * Q * K * N * H
@@ -85,7 +90,7 @@ class Model(object):
             R_coef = (N * wdilation * ((Q - 1) * hstride + 1 + hdilation * (S - 1)) * C + K * S * C) * R * H
             S_coef = (N * hdilation * ((P - 1) * wstride + 1 + wdilation * (R - 1)) * C + K * R * C) * S * H
             H_coef = (N * ((P - 1) * wstride + 1 + wdilation * (R - 1)) * ((Q - 1) * hstride + 1 + hdilation * (S - 1)) * C + K * R * S * C + P * Q * K * N) * H
-        elif self.operator_instance['type'] == 'T2D':
+        elif self.operator_type == 'T2D':
             input_tile = P * Q * C * N * H
             weight_tile = K * R * S * C * H
             output_tile = N * ((P - 1) * wstride + 1 + wdilation * (R - 1)) * (
@@ -116,7 +121,7 @@ class Model(object):
             H_coef = (P * Q * C * N + K * R * S * C + N * ((P - 1) * wstride + 1 + wdilation * (R - 1)) * (
                         (Q - 1) * hstride + 1 + hdilation * (S - 1)) * K) * H
         if cur_buffer_level == 5:  # global buffer
-            if self.operator_instance['type'] == 'C2D':
+            if self.operator_type == 'C2D':
                 input_tile = N * ((P - 1) * wstride + 1 + wdilation * (R - 1)) * (
                         (Q - 1) * hstride + 1 + hdilation * (S - 1)) * C * H
                 weight_tile = program_seq_disorder.new_zeros(batch_size)
@@ -146,7 +151,7 @@ class Model(object):
                 S_coef = (N * hdilation * ((P - 1) * wstride + 1 + wdilation * (R - 1)) * C) * S * H
                 H_coef = (N * ((P - 1) * wstride + 1 + wdilation * (R - 1)) * (
                         (Q - 1) * hstride + 1 + hdilation * (S - 1)) * C + P * Q * K * N) * H
-            elif self.operator_instance['type'] == 'T2D':
+            elif self.operator_type == 'T2D':
                 input_tile = P * Q * C * N * H
                 weight_tile = program_seq_disorder.new_zeros(batch_size)
                 output_tile = N * ((P - 1) * wstride + 1 + wdilation * (R - 1)) * (
@@ -192,7 +197,7 @@ class Model(object):
                 C = program_seq_disorder.new_zeros(batch_size)
                 C_sub = program_seq_disorder.new_zeros(batch_size).float()
                 C_coef = program_seq_disorder.new_ones(batch_size).float().fill_(1e-12)
-                if self.operator_instance['type'] == 'C2D':
+                if self.operator_type == 'C2D':
                     R = program_seq_disorder.new_zeros(batch_size)
                     S = program_seq_disorder.new_zeros(batch_size)
                     R_sub = program_seq_disorder.new_zeros(batch_size).float()
@@ -204,7 +209,7 @@ class Model(object):
                 K = program_seq_disorder.new_zeros(batch_size)
                 K_sub = program_seq_disorder.new_zeros(batch_size).float()
                 K_coef = program_seq_disorder.new_ones(batch_size).float().fill_(1e-12)
-                if self.operator_instance['type'] == 'T2D':
+                if self.operator_type == 'T2D':
                     R = program_seq_disorder.new_zeros(batch_size)
                     S = program_seq_disorder.new_zeros(batch_size)
                     R_sub = program_seq_disorder.new_zeros(batch_size).float()
@@ -237,7 +242,7 @@ class Model(object):
         hdilation = self.operator_instance['Hdilation']
         if cur_buffer_level == 1:  # pe acc
             C = program_seq_disorder.new_zeros(batch_size)
-            if self.operator_instance['type'] == 'C2D':
+            if self.operator_type == 'C2D':
                 R = program_seq_disorder.new_zeros(batch_size)
                 S = program_seq_disorder.new_zeros(batch_size)
         elif cur_buffer_level == 2:  # pe weight
@@ -246,7 +251,7 @@ class Model(object):
             Q = program_seq_disorder.new_zeros(batch_size)
         elif cur_buffer_level == 3:  # pe input
             K = program_seq_disorder.new_zeros(batch_size)
-            if self.operator_instance['type'] == 'T2D':
+            if self.operator_type == 'T2D':
                 R = program_seq_disorder.new_zeros(batch_size)
                 S = program_seq_disorder.new_zeros(batch_size)
         elif cur_buffer_level == 4:  # dummybuffer
@@ -259,7 +264,7 @@ class Model(object):
             R = program_seq_disorder.new_zeros(batch_size)
             S = program_seq_disorder.new_zeros(batch_size)
 
-        if self.operator_instance['type'] == 'C2D':
+        if self.operator_type == 'C2D':
             input_tile = N * ((P - 1) * wstride + 1 + wdilation * (R - 1)) * ((Q - 1) * hstride + 1 + hdilation * (S - 1)) * C * H
             weight_tile = K * R * S * C * H
             output_tile = P * Q * K * N * H
@@ -283,7 +288,7 @@ class Model(object):
             R_coef = (N * wdilation * ((Q - 1) * hstride + 1 + hdilation * (S - 1)) * C + K * S * C) * R * H
             S_coef = (N * hdilation * ((P - 1) * wstride + 1 + wdilation * (R - 1)) * C + K * R * C) * S * H
             H_coef = (N * ((P - 1) * wstride + 1 + wdilation * (R - 1)) * ((Q - 1) * hstride + 1 + hdilation * (S - 1)) * C + K * R * S * C + P * Q * K * N) * H
-        elif self.operator_instance['type'] == 'T2D':
+        elif self.operator_type == 'T2D':
             input_tile = P * Q * C * N * H
             weight_tile = K * R * S * C * H
             output_tile = N * ((P - 1) * wstride + 1 + wdilation * (R - 1)) * (
@@ -314,7 +319,7 @@ class Model(object):
             H_coef = (P * Q * C * N + K * R * S * C + N * ((P - 1) * wstride + 1 + wdilation * (R - 1)) * (
                         (Q - 1) * hstride + 1 + hdilation * (S - 1)) * K) * H
         if cur_buffer_level == 5:  # global buffer
-            if self.operator_instance['type'] == 'C2D':
+            if self.operator_type == 'C2D':
                 input_tile = N * ((P - 1) * wstride + 1 + wdilation * (R - 1)) * (
                         (Q - 1) * hstride + 1 + hdilation * (S - 1)) * C * H
                 weight_tile = program_seq_disorder.new_zeros(batch_size)
@@ -344,7 +349,7 @@ class Model(object):
                 S_coef = (N * hdilation * ((P - 1) * wstride + 1 + wdilation * (R - 1)) * C) * S * H
                 H_coef = (N * ((P - 1) * wstride + 1 + wdilation * (R - 1)) * (
                         (Q - 1) * hstride + 1 + hdilation * (S - 1)) * C + P * Q * K * N) * H
-            elif self.operator_instance['type'] == 'T2D':
+            elif self.operator_type == 'T2D':
                 input_tile = P * Q * C * N * H
                 weight_tile = program_seq_disorder.new_zeros(batch_size)
                 output_tile = N * ((P - 1) * wstride + 1 + wdilation * (R - 1)) * (
@@ -379,7 +384,7 @@ class Model(object):
                 C = program_seq_disorder.new_zeros(batch_size)
                 C_sub = program_seq_disorder.new_zeros(batch_size).float()
                 C_coef = program_seq_disorder.new_ones(batch_size).float().fill_(1e-12)
-                if self.operator_instance['type'] == 'C2D':
+                if self.operator_type == 'C2D':
                     R = program_seq_disorder.new_zeros(batch_size)
                     S = program_seq_disorder.new_zeros(batch_size)
                     R_sub = program_seq_disorder.new_zeros(batch_size).float()
@@ -400,7 +405,7 @@ class Model(object):
                 K = program_seq_disorder.new_zeros(batch_size)
                 K_sub = program_seq_disorder.new_zeros(batch_size).float()
                 K_coef = program_seq_disorder.new_ones(batch_size).float().fill_(1e-12)
-                if self.operator_instance['type'] == 'T2D':
+                if self.operator_type == 'T2D':
                     R = program_seq_disorder.new_zeros(batch_size)
                     S = program_seq_disorder.new_zeros(batch_size)
                     R_sub = program_seq_disorder.new_zeros(batch_size).float()
@@ -450,16 +455,16 @@ class Model(object):
         hdilation = self.operator_instance['Hdilation']
         if cur_buffer_level == 1:  # LRF
             K = program_seq_disorder.new_zeros(batch_size)
-            if self.operator_instance['type'] == 'T2D':
+            if self.operator_type == 'T2D':
                 R = program_seq_disorder.new_zeros(batch_size)
                 S = program_seq_disorder.new_zeros(batch_size)
         elif cur_buffer_level == 2:  # RF
             C = program_seq_disorder.new_zeros(batch_size)
-            if self.operator_instance['type'] == 'C2D':
+            if self.operator_type == 'C2D':
                 R = program_seq_disorder.new_zeros(batch_size)
                 S = program_seq_disorder.new_zeros(batch_size)
 
-        if self.operator_instance['type'] == 'C2D':
+        if self.operator_type == 'C2D':
             input_tile = N * ((P - 1) * wstride + 1 + wdilation * (R - 1)) * ((Q - 1) * hstride + 1 + hdilation * (S - 1)) * C * H
             weight_tile = K * R * S * C * H
             output_tile = P * Q * K * N * H
@@ -483,7 +488,7 @@ class Model(object):
             R_coef = (N * wdilation * ((Q - 1) * hstride + 1 + hdilation * (S - 1)) * C + K * S * C) * R * H
             S_coef = (N * hdilation * ((P - 1) * wstride + 1 + wdilation * (R - 1)) * C + K * R * C) * S * H
             H_coef = (N * ((P - 1) * wstride + 1 + wdilation * (R - 1)) * ((Q - 1) * hstride + 1 + hdilation * (S - 1)) * C + K * R * S * C + P * Q * K * N) * H
-        elif self.operator_instance['type'] == 'T2D':
+        elif self.operator_type == 'T2D':
             input_tile = P * Q * C * N * H
             weight_tile = K * R * S * C * H
             output_tile = N * ((P - 1) * wstride + 1 + wdilation * (R - 1)) * (
@@ -514,7 +519,7 @@ class Model(object):
             H_coef = (P * Q * C * N + K * R * S * C + N * ((P - 1) * wstride + 1 + wdilation * (R - 1)) * (
                         (Q - 1) * hstride + 1 + hdilation * (S - 1)) * K) * H
         if cur_buffer_level == 3:  # SMEM
-            if self.operator_instance['type'] == 'C2D':
+            if self.operator_type == 'C2D':
                 input_tile = N * ((P - 1) * wstride + 1 + wdilation * (R - 1)) * (
                         (Q - 1) * hstride + 1 + hdilation * (S - 1)) * C * H
                 weight_tile = K * R * S * C * H
@@ -544,7 +549,7 @@ class Model(object):
                 S_coef = (N * hdilation * ((P - 1) * wstride + 1 + wdilation * (R - 1)) * C + K * R * C) * S * H
                 H_coef = (N * ((P - 1) * wstride + 1 + wdilation * (R - 1)) * (
                         (Q - 1) * hstride + 1 + hdilation * (S - 1)) * C + K * R * S * C) * H
-            elif self.operator_instance['type'] == 'T2D':
+            elif self.operator_type == 'T2D':
                 input_tile = P * Q * C * N * H
                 weight_tile = K * R * S * C * H
                 output_tile = program_seq_disorder.new_zeros(batch_size)
@@ -571,7 +576,7 @@ class Model(object):
                 K = program_seq_disorder.new_zeros(batch_size)
                 K_sub = program_seq_disorder.new_zeros(batch_size).float()
                 K_coef = program_seq_disorder.new_ones(batch_size).float().fill_(1e-12)
-                if self.operator_instance['type'] == 'T2D':
+                if self.operator_type == 'T2D':
                     R = program_seq_disorder.new_zeros(batch_size)
                     S = program_seq_disorder.new_zeros(batch_size)
                     R_sub = program_seq_disorder.new_zeros(batch_size).float()
@@ -582,7 +587,7 @@ class Model(object):
                 C = program_seq_disorder.new_zeros(batch_size)
                 C_sub = program_seq_disorder.new_zeros(batch_size).float()
                 C_coef = program_seq_disorder.new_ones(batch_size).float().fill_(1e-12)
-                if self.operator_instance['type'] == 'C2D':
+                if self.operator_type == 'C2D':
                     R = program_seq_disorder.new_zeros(batch_size)
                     S = program_seq_disorder.new_zeros(batch_size)
                     R_sub = program_seq_disorder.new_zeros(batch_size).float()

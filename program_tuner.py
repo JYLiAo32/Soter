@@ -19,6 +19,7 @@ from transformer.Models import Transformer
 from transformer.Optim import ScheduledOptim
 from cost_model import Timeloop
 from analytical_model import Model
+from global_config import GlobalConfig
 
 
 def set_seed(seed):
@@ -167,15 +168,18 @@ class ProgramTransformer(nn.Module):
 
 class Tuner:
 
-    def __init__(self, operator_instance, accelerator, report_dir, optim_obj, verbose=1):
+    def __init__(self, operator_instance: dict, accelerator: str, report_dir: str, optim_obj: str, operator_type: str, verbose=1):
         self.verbose = verbose
         self.opt_obj = [optim_obj, 'latency', 'energy']
 
-        self.timeloop_out_config_path = f'./tmp/out_config_{datetime.now().strftime("%H:%M:%S")}'
+        self.input_config_path = GlobalConfig.TIMELOOP_CONFIG_PATH
+        self.timeloop_out_config_path = GlobalConfig.TIMELOOP_OUTPUT_PATH
         self.report_dir = report_dir
 
+        self.operator_type = operator_type
         self.accelerator = accelerator
-        self.cost_model = Timeloop(in_config_path='./SpatialAccelerators', out_config_path=self.timeloop_out_config_path,
+        # FIXME: 修正timeloop内部逻辑
+        self.cost_model = Timeloop(in_config_path=self.input_config_path, out_config_path=self.timeloop_out_config_path,
                                    accelerator=accelerator, opt_obj=self.opt_obj, verbose=verbose)
         self.dim2note = self.cost_model.dim2note
         self.len_dimension = len(self.dim2note.values())
@@ -245,8 +249,9 @@ class Tuner:
         self.finished_levels = []
 
         set_seed(42)
+        # FIXME: 修正Model的内部逻辑, 主要与Problem的配置相关，应该影响不算很大？
         self.analytical_model = Model(self.prime2idx, self.buffer_size_list, self.buf_spmap_cstr, self.steps_per_level,
-                                      self.operator_instance, self.accelerator)
+                                      self.operator_instance, self.accelerator, self.operator_type)
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         self.explorer = ProgramTransformer(self.operator_instance, self.steps_per_level, self.max_tile, self.prime2idx,
                                            self.buffer_size_list, self.buf_spmap_cstr).to(device)
