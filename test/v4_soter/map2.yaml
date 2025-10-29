@@ -1,0 +1,105 @@
+# 由tl_mapper搜索出的方案
+mapping:
+  - target: Registers
+    type: dataspace  # FIXME: 为什么mapper输出这里是datatype, 实际上应该是dataspace，否则调用tl.model会报错
+    keep:
+      []
+    bypass:
+      - Weights
+      - Inputs
+      - Outputs
+  - target: reg_mac
+    type: dataspace
+    keep:
+      []
+    bypass:
+      - Weights
+      - Inputs
+      - Outputs
+  - target: AccumulationBuffer
+    type: dataspace
+    keep:
+      - Outputs
+    bypass:
+      - Weights
+      - Inputs
+  - target: WeightBuffer
+    type: dataspace
+    keep:
+      - Weights
+    bypass:
+      - Inputs
+      - Outputs
+  - target: InputBuffer
+    type: dataspace
+    keep:
+      - Inputs
+    bypass:
+      - Weights
+      - Outputs
+  - target: PE
+    type: dataspace
+    keep:
+      []
+    bypass:
+      - Weights
+      - Inputs
+      - Outputs
+  - target: GlobalBuffer
+    type: dataspace
+    keep:
+      []
+    bypass:
+      - Weights
+      - Inputs
+      - Outputs
+  - target: DRAM
+    type: dataspace
+    keep:
+      - Weights
+      - Inputs
+      - Outputs
+    bypass:
+      []
+  - target: Registers
+    type: temporal
+    factors: [H=1, C=32, K=4, R=1, S=1, N=1, P=1, Q=1]  # 修改格式！
+    permutation: [C, K, H, R, S, N, P, Q]
+  - target: reg_mac
+    type: spatial
+    factors: [H=1, C=1, K=4, R=1, S=1, N=1, P=2, Q=1]  # 修改格式！
+    permutation: [K, P, H, R, S, N, C, Q]
+    split: 2
+  - target: reg_mac
+    type: temporal
+    factors: [H=1, C=1, K=1, R=1, S=1, N=1, P=1, Q=1]  # 修改格式！
+    permutation: [H, C, K, R, S, N, P, Q]
+  - target: AccumulationBuffer
+    type: temporal
+    factors: [H=1, C=1, K=1, R=1, S=1, N=1, P=1, Q=1]  # 修改格式！
+    permutation: [H, C, K, R, S, N, P, Q]
+  - target: WeightBuffer
+    type: temporal
+    factors: [H=1, C=1, K=4, R=1, S=1, N=1, P=1, Q=1]  # 修改格式！
+    permutation: [K, H, C, R, S, N, P, Q]
+  - target: InputBuffer
+    type: temporal
+    factors: [H=1, C=1, K=4, R=1, S=1, N=1, P=7, Q=1]  # 修改格式！
+    permutation: [P, K, H, C, R, S, N, Q]
+  - target: PE
+    type: spatial
+    factors: [H=1, C=8, K=1, R=1, S=1, N=1, P=1, Q=2]  # 修改格式！
+    permutation: [C, Q, H, K, R, S, N, P]
+    split: 2
+  - target: PE
+    type: temporal
+    factors: [H=1, C=1, K=1, R=1, S=1, N=1, P=1, Q=1]  # 修改格式！
+    permutation: [H, C, K, R, S, N, P, Q]
+  - target: GlobalBuffer
+    type: temporal
+    factors: [H=1, C=2, K=1, R=1, S=1, N=2, P=1, Q=7]  # 修改格式！ 
+    permutation: [N, C, Q, H, K, R, S, P]
+  - target: DRAM
+    type: temporal
+    factors: [H=1, C=2, K=2, R=1, S=1, N=8, P=1, Q=1]  # 修改格式！
+    permutation: [C, K, N, H, R, S, P, Q]

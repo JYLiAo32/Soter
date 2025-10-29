@@ -1,0 +1,33 @@
+{
+  "problem":
+    {
+      "shape":
+        {
+          "name": "CNN-Layer",
+          "dimensions": ["H", "C", "K", "R", "S", "N", "P", "Q"],
+          "coefficients":
+            [
+              { "name": "Wstride", "default": 1 },
+              { "name": "Hstride", "default": 1 },
+              { "name": "Wdilation", "default": 1 },
+              { "name": "Hdilation", "default": 1 },
+            ],
+        },
+      "instance":
+        {
+          "C": 256,
+          "K": 512,
+          "R": 3,
+          "S": 3,
+          "P": 56,
+          "Q": 56,
+          "H": 1,
+          "N": 16,
+          "Wstride": 1,
+          "Hstride": 1,
+          "Wdilation": 1,
+          "Hdilation": 1,
+        },
+    },
+}
+  
