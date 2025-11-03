@@ -20,9 +20,9 @@ architecture:
       block_size: 64 # 匹配v2设定, 同时改动width
       datawidth: 8
       width: 512
-    # 参考spatialAccelerators/simba/mapspace.yaml的配置补全约束:
-    constraints:
-      dataspace: {keep: [Inputs, Outputs, Weights], bypass: []}
+#    # 参考spatialAccelerators/simba/mapspace.yaml的配置补全约束:
+#    constraints:
+#      dataspace: {keep: [Inputs, Outputs, Weights], bypass: []}
 
   - !Container
     name: Chip
@@ -42,9 +42,9 @@ architecture:
       width: 64
       datawidth: 8
       write_bandwidth: 2
-    # 参考spatialAccelerators/simba/mapspace.yaml的配置补全约束:
-    constraints:
-      dataspace: {keep: [Inputs, Outputs], bypass: [Weights]}
+#    # 参考spatialAccelerators/simba/mapspace.yaml的配置补全约束:
+#    constraints:
+#      dataspace: {keep: [Inputs, Outputs], bypass: [Weights]}
 
   - !Container
     name: PE
@@ -131,9 +131,9 @@ architecture:
       width: 8
       datawidth: 8
       write_bandwidth: 2
-    # 参考spatialAccelerators/simba/mapspace.yaml的配置补全约束:
-    constraints:
-      dataspace: {keep: [Weights], bypass: [Outputs, Inputs]}  # FIXME: 寄存器只存权重？
+#    # 参考spatialAccelerators/simba/mapspace.yaml的配置补全约束:
+#    constraints:
+#      dataspace: {keep: [Weights], bypass: [Outputs, Inputs]}  # FIXME: 寄存器只存权重？
 
   - !Component
       name: MACC

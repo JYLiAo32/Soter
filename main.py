@@ -1,4 +1,6 @@
 import os
+from datetime import datetime
+
 import yaml
 import pickle
 
@@ -154,6 +156,7 @@ def main():
         f"obj_{args.optim_obj}",
         f"{workload}_input{batch_size}",
         f"layer-{layer_id}",
+        f"{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}",
     )
     if args.verbose > 0:
         print(f"Report dir: {report_dir}")

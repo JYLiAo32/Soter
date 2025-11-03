@@ -13,3 +13,4 @@ __pycache__
 .idea/*
 .DS_Store
 timeloop-model*.yaml
+report/*

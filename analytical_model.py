@@ -6,9 +6,6 @@ import copy
 import torch
 import torch.nn.functional as F
 
-"""
-    # FIXME: 新版配置文件中, operator_instance 下已经不能有type属性, 否则会报错, 需要修改设定方式
-"""
 
 class Model(object):
     def __init__(self, prime2idx, buffer_size_list, buf_spmap_cstr, steps_per_level, operator_instance, accelerator,

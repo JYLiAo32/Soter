@@ -8,9 +8,11 @@ class GlobalConfig:
     MAPPING_FILE = "mapping.yaml"
     MAPPER_FILE = "mapper.yaml"
     COMPONENT_PATH = "components/*.yaml"
+    MAP_PATH = "map.yaml"
+    BEST_MAP_PATH = "best_map.yaml"
 
     DUMP_ENV_CKPT_PATH = "env_chkpt.pkl"
     TIMELOOP_CONFIG_PATH = './SpatialAccelerators_v4'
-    TIMELOOP_OUTPUT_PATH = f'./tmp/out_config_{datetime.now().strftime("%H:%M:%S")}'
+    TIMELOOP_OUTPUT_PATH = f'./tmp/out_config_{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}'
     def __init__(self, args):
         self.args = args

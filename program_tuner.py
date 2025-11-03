@@ -168,13 +168,15 @@ class ProgramTransformer(nn.Module):
 
 class Tuner:
 
-    def __init__(self, operator_instance: dict, accelerator: str, report_dir: str, optim_obj: str, operator_type: str, verbose=1):
+    def __init__(self, operator_instance: dict, accelerator: str, report_dir: str, optim_obj: str, operator_type: str,
+                 verbose=1):
         self.verbose = verbose
         self.opt_obj = [optim_obj, 'latency', 'energy']
 
         self.input_config_path = GlobalConfig.TIMELOOP_CONFIG_PATH
         self.timeloop_out_config_path = GlobalConfig.TIMELOOP_OUTPUT_PATH
         self.report_dir = report_dir
+        os.makedirs(self.report_dir, exist_ok=True)
 
         self.operator_type = operator_type
         self.accelerator = accelerator
@@ -206,12 +208,12 @@ class Tuner:
         self.worst_obj = None
 
         if 'Simba' in self.accelerator:
-            self.level_order = [1, 2, 3, 4, 5, 6, 1]
+            self.level_order = [1, 2, 3, 4, 5, 6, 1]  # FIXME: 这是什么？
         elif 'Eyeriss' in self.accelerator:
             self.level_order = [4, 5, 1, 2, 3, 6, 1]
         elif 'TensorCore' in self.accelerator:
             self.level_order = [2, 3, 1, 4, 1]
-        self.steps_per_level = len(self.dim2note.values())
+        self.steps_per_level = len(self.dim2note.values())  # 每个内存层级的步骤数(即问题的维度数)
         self.total_steps = self.num_buf_levels * self.steps_per_level
 
         self.num_samples = 32
@@ -242,7 +244,8 @@ class Tuner:
                 self.initial_program_seq[:, i * self.steps_per_level + j + 1, 0] = j
                 self.initial_program_seq[:, i * self.steps_per_level + j + 1, self.num_primes + 1:] = 0
                 if i == self.num_buf_levels - 1:
-                    self.initial_program_seq[:, i * self.steps_per_level + j + 1, 1: self.num_primes + 1] = self.tile_budgets[:, j]
+                    self.initial_program_seq[:, i * self.steps_per_level + j + 1,
+                    1: self.num_primes + 1] = self.tile_budgets[:, j]
                 else:
                     self.initial_program_seq[:, i * self.steps_per_level + j + 1, 1: self.num_primes + 1] = 0
 
@@ -266,25 +269,36 @@ class Tuner:
 
             final_program_seq, total_rewards, total_log_probs, total_log_prob_masks = self.exploration()
 
-            fitness = self.cost_model.run(final_program_seq[:, :, :])
+            fitness = self.cost_model.run(final_program_seq)
             latency = fitness[:, 1]
             energy = fitness[:, 2]
             obj_values = fitness[:, 0]
             self.optimization(obj_values, total_rewards, total_log_probs, total_log_prob_masks)
-            chkpt = self.record_chkpt(ep == epochs - 1)
-            best_idx = np.argmax(obj_values)
-            if obj_values[best_idx] > self.best_obj:
+
+            best_idx = np.argmax(obj_values)  # 获取当前批量的最优解
+            if obj_values[best_idx] > self.best_obj:  # 与历史最优解对比
                 self.best_obj = obj_values[best_idx]
                 self.best_latency = latency[best_idx]
                 self.best_energy = energy[best_idx]
                 self.best_program = final_program_seq[best_idx]
                 self.create_timeloop_report(self.best_program, self.report_dir)
-            print("Achieved obj: ", self.best_obj, obj_values[best_idx], self.best_latency,
-                  self.best_energy, (obj_values > float('-inf')).sum())
+                # 输出最优设计
+                self.cost_model.dump_map_config(self.best_program,
+                                                os.path.join(self.report_dir, f'best_map_{ep}_{self.best_obj}.yaml'))
+            # print("Achieved obj: ", self.best_obj, obj_values[best_idx], self.best_latency,
+            #       self.best_energy, (obj_values > float('-inf')).sum())
+            # 优化输出格式:
+            print(f"cur_max_obj={obj_values[best_idx]:.2f} | "
+                  f"best_obj={self.best_obj:.2f} | "
+                  f"best_latency={self.best_latency:.2f} | "
+                  f"best_energy={self.best_energy:.2f} | "
+                  f"valid_count={np.sum(obj_values > float('-inf'))}")
+            chkpt = self.record_chkpt(ep == epochs - 1)
+
         self.clean_timeloop_output_files()
         return chkpt
 
-    def exploration(self):   # Transformer-based
+    def exploration(self):  # Transformer-based
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
         self.finished_levels = []
@@ -296,9 +310,12 @@ class Tuner:
         tile_remain_budgets = torch.from_numpy(copy.deepcopy(self.tile_budgets)).type(torch.LongTensor).to(device)
         tile_masks = torch.from_numpy(copy.deepcopy(self.initial_tile_masks)).type(torch.FloatTensor).to(device)
 
-        program_seq = torch.from_numpy(copy.deepcopy(self.initial_program_seq[:, :1, :])).type(torch.LongTensor).to(device)
-        program_seq_disorder = torch.from_numpy(copy.deepcopy(self.initial_program_seq[:, 1:, :])).type(torch.LongTensor).to(device)
-        final_program_seq = torch.from_numpy(copy.deepcopy(self.initial_program_seq[:, 1:, :])).type(torch.LongTensor).to(device)
+        program_seq = torch.from_numpy(copy.deepcopy(self.initial_program_seq[:, :1, :])).type(torch.LongTensor).to(
+            device)
+        program_seq_disorder = torch.from_numpy(copy.deepcopy(self.initial_program_seq[:, 1:, :])).type(
+            torch.LongTensor).to(device)
+        final_program_seq = torch.from_numpy(copy.deepcopy(self.initial_program_seq[:, 1:, :])).type(
+            torch.LongTensor).to(device)
 
         start_level_order = 0
         cur_buffer_level = self.level_order[start_level_order]
@@ -311,7 +328,8 @@ class Tuner:
                 program_seq_disorder, tile_remain_budgets, mode, cur_buffer_level, loop_ind)
 
             step_order, step_tile, step_parallel, step_log_prob, step_log_prob_mask = self.explorer(
-                program_seq, order_mask, tile_remain_budgets, tile_masks[:, :, :, 0:self.max_tile + 1], cur_buffer_level,
+                program_seq, order_mask, tile_remain_budgets, tile_masks[:, :, :, 0:self.max_tile + 1],
+                cur_buffer_level,
                 loop_ind, remain_buffer_size, tile2_max, max_temporal_tile2, sp_tile2_max, sp_tile2_min)
 
             if cur_buffer_level < self.num_buf_levels:
@@ -351,7 +369,7 @@ class Tuner:
                 program_seq = torch.cat((program_seq, cur_seq), dim=1)
 
                 seq_disorder_ind = (cur_buffer_level - 1) * self.steps_per_level + loop_ind
-                program_seq_disorder[:, seq_disorder_ind, 1 : self.num_primes + 1] = step_tile
+                program_seq_disorder[:, seq_disorder_ind, 1: self.num_primes + 1] = step_tile
                 program_seq_disorder[:, seq_disorder_ind, self.num_primes + 1:] = step_parallel
 
                 final_program_seq[:, mode, 0] = step_order
@@ -442,13 +460,16 @@ class Tuner:
         self.optimizer.step_and_update_lr()
 
     def create_timeloop_report(self, program, dir_path):
-        fitness = self.cost_model.thread_fun((program, 0))
-        stats = self.cost_model.thread_fun((program, 0))
+        # FIXME: 为什么要调用两次thread_fun?
+        fitness = self.cost_model.thread_fun(program, 0, dir_path)
+        # stats = self.cost_model.thread_fun(program, 0, dir_path)
+        stats = fitness
         os.makedirs(dir_path, exist_ok=True)
-        columns = ['EDP (uJ cycles)', 'Cycles', 'Energy (pJ)', 'Utilization', 'pJ/Algorithm-Compute', 'pJ/Actual-Compute', 'Area (mm2)'][:len(stats)]
+        columns = ['EDP (uJ cycles)', 'Cycles', 'Energy (pJ)', 'Utilization', 'pJ/Algorithm-Compute',
+                   'pJ/Actual-Compute', 'Area (mm2)'][:len(stats)]
 
-        os.system(f'cp -d -r {os.path.join(self.timeloop_out_config_path, "pool-0")}/* {dir_path}')
-        with open(os.path.join(dir_path,'Timeloop.txt'), 'w') as fd:
+        # os.system(f'cp -d -r {os.path.join(self.timeloop_out_config_path, "pool-0")}/* {dir_path}')
+        with open(os.path.join(dir_path, 'Timeloop.txt'), 'w') as fd:
             value = [f'{v:.5e}' for v in fitness]
             fd.write(f'Achieved Fitness: {value}\n')
             fd.write(f'Statistics\n')
@@ -456,7 +477,7 @@ class Tuner:
             fd.write(f'{stats}')
         stats = np.array(stats).reshape(1, -1)
         df = pd.DataFrame(stats, columns=columns)
-        df.to_csv(os.path.join(dir_path,'Timeloop.csv'))
+        df.to_csv(os.path.join(dir_path, 'Timeloop.csv'))
 
     def record_chkpt(self, write=False):
         self.best_obj_record.append(self.best_obj)
@@ -484,7 +505,7 @@ class Tuner:
         shutil.rmtree(self.timeloop_out_config_path)
         out_prefix = "./timeloop-model."
         output_file_names = []
-        output_file_names.append( "tmp-accelergy.yaml")
+        output_file_names.append("tmp-accelergy.yaml")
         output_file_names.append(out_prefix + "accelergy.log")
         output_file_names.extend(glob.glob("*accelergy.log"))
         output_file_names.extend(glob.glob("*tmp-accelergy.yaml"))
@@ -500,8 +521,3 @@ class Tuner:
         for f in output_file_names:
             if os.path.exists(f):
                 os.remove(f)
-
-
-
-
-
